@@ -7,6 +7,11 @@
       "label": "serve",
       "type": "shell",
       "command": "zola serve"
+    },
+    {
+      "label": "build",
+      "type": "shell",
+      "command": "zola build"
     }
   ]
 }

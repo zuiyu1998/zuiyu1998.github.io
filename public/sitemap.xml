@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <url>
+        <loc>https://zuiyu1998.github.io/</loc>
+    </url>
+    <url>
+        <loc>https://zuiyu1998.github.io/bevy-render/</loc>
+        <lastmod>2024-01-24</lastmod>
+    </url>
+    <url>
+        <loc>https://zuiyu1998.github.io/categories/</loc>
+    </url>
+    <url>
+        <loc>https://zuiyu1998.github.io/hello-template/</loc>
+        <lastmod>2024-01-24</lastmod>
+    </url>
+    <url>
+        <loc>https://zuiyu1998.github.io/page/1/</loc>
+    </url>
+    <url>
+        <loc>https://zuiyu1998.github.io/tags/</loc>
+    </url>
+    <url>
+        <loc>https://zuiyu1998.github.io/tags/bevy/</loc>
+    </url>
+    <url>
+        <loc>https://zuiyu1998.github.io/tags/rust/</loc>
+    </url>
+    <url>
+        <loc>https://zuiyu1998.github.io/tags/template/</loc>
+    </url>
+</urlset>
