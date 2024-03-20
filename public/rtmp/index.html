@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="referrer" content="no-referrer-when-downgrade">
 
-    <title>这是一个博客模板</title>
+    <title>rtmp 协议解析</title>
     <meta name="description" content="">
 
     <link rel="stylesheet" href="https://zuiyu1998.github.io/main.css">
@@ -37,12 +37,22 @@
 
 <article class="post">
     <header>
-        <h1>这是一个博客模板</h1>
+        <h1>rtmp 协议解析</h1>
     </header>
     <div class="content">
-        <p>这是一个博客模板。</p>
+        <p>关于 rtmp 协议的解析思路。</p>
 <span id="continue-reading"></span>
-<h1 id="biao-ti">标题</h1>
+<h1 id="wo-shou">握手</h1>
+<h1 id="shu-ju-chuan-shu">数据传输</h1>
+<p>rtmp 中存储数据的基础单元是 message，但是传输数据的基础单元是 chunk。一个 message 会对应一个或者多个 chunk。所以 chunk 中有着 message 的唯一标识用来区分 chunk 的所属。</p>
+<p>chunk 的实际定义如下:</p>
+<ul>
+<li>chunk base header</li>
+<li>chunk message header</li>
+<li>extended time stamp</li>
+<li>chunk data</li>
+</ul>
+<p>chunk base header 是不定长的。它分为两部分，由第一个字节的前两个 bit 决定总体的长度。</p>
 
     </div>
 
@@ -56,7 +66,9 @@
             
                 <ul class="article-tags">
                     
-                    <li><a href="https://zuiyu1998.github.io/tags/template/">#template</a></li>
+                    <li><a href="https://zuiyu1998.github.io/tags/rtmp/">#rtmp</a></li>
+                    
+                    <li><a href="https://zuiyu1998.github.io/tags/liu-mei-ti-xie-yi/">#流媒体协议</a></li>
                     
                 </ul>
             

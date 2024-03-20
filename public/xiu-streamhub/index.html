@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="referrer" content="no-referrer-when-downgrade">
 
-    <title>这是一个博客模板</title>
+    <title>论xiu streamhub的设计</title>
     <meta name="description" content="">
 
     <link rel="stylesheet" href="https://zuiyu1998.github.io/main.css">
@@ -37,12 +37,28 @@
 
 <article class="post">
     <header>
-        <h1>这是一个博客模板</h1>
+        <h1>论xiu streamhub的设计</h1>
     </header>
     <div class="content">
-        <p>这是一个博客模板。</p>
+        <p>xiu streamhub 的设计。</p>
 <span id="continue-reading"></span>
-<h1 id="biao-ti">标题</h1>
+<h1 id="xu-qiu">需求</h1>
+<p>可以任意的添加多个协议流，对每个协议流都可以进行转发。这是一个一对多，一对多的关系。
+并且这种关系不是默认存在的，而是一步步添加的。</p>
+<p>观察者模式，这是十分符合这一抽象的。每个客户端不需要知道这个流来自那个协议，而是只需要获取数据的流。</p>
+<h1 id="zhu-yao-she-ji">主要设计</h1>
+<p>StreamHubEventSender</p>
+<ul>
+<li>负责订阅和发布，类似 Observer</li>
+</ul>
+<p>Transmitter</p>
+<ul>
+<li>每一个 publish 的实际管理者，负责数据流的管理</li>
+</ul>
+<p>DataSender/DataReceiver</p>
+<ul>
+<li>每个客户端实际获取的数据流</li>
+</ul>
 
     </div>
 
@@ -56,7 +72,9 @@
             
                 <ul class="article-tags">
                     
-                    <li><a href="https://zuiyu1998.github.io/tags/template/">#template</a></li>
+                    <li><a href="https://zuiyu1998.github.io/tags/xiu/">#xiu</a></li>
+                    
+                    <li><a href="https://zuiyu1998.github.io/tags/liu-mei-ti-fu-wu-qi/">#流媒体服务器</a></li>
                     
                 </ul>
             
