@@ -11,14 +11,10 @@ tags = ["roguelike", "bevy"]
 
 <!-- more -->
 
-# 去除无用的代码
-
-在现在的项目里，还保留着一个 left_movement 系统和相关的定义，但是现在已经不需要它了。可以在项目中将相关的代码删除。
-
 # 添加多个房间
 
-上期添加了 new_map 函数来新建一个 map。这期新建一个更复杂的地图。
-在 src/map.rs 中新增一个 Rect，并为它添加基本的方法,代码如下：
+上期使用 new_map 创建了一个简易地图，现在为地图添加房间。
+在 src/map.rs 中添加 Rect，同时添加必要的函数，代码如下:
 
 ```rust
 pub struct Rect {
@@ -38,7 +34,7 @@ impl Rect {
         }
     }
 
-    ///在和其他rect重叠的情况下返回true
+    // Returns true if this overlaps with other
     pub fn intersect(&self, other: &Rect) -> bool {
         self.x1 <= other.x2 && self.x2 >= other.x1 && self.y1 <= other.y2 && self.y2 >= other.y1
     }
@@ -49,137 +45,68 @@ impl Rect {
 }
 ```
 
-新增一个方法，将 rect 的地图数据生成在地图上，代码如下：
+intersect 函数用来判断重合，center 返回 rect 的中心位置。
+
+为 map 添加 apply_room_to_map 函数，将 rect 的数据映射到 map 上。代码如下:
 
 ```rust
-fn apply_room_to_map(room: &Rect, map: &mut Map) {
-    for y in room.y1 + 1..=room.y2 {
-        for x in room.x1 + 1..=room.x2 {
-            let idx = map.xy_idx(x, y);
-            map.tiles[idx] = TileType::Floor;
+    fn apply_room_to_map(&mut self, room: &Rect) {
+        for y in room.y1 + 1..=room.y2 {
+            for x in room.x1 + 1..=room.x2 {
+                let index = self.xy_idx(x, y);
+                self.tiles[index] = TileType::Floor;
+            }
         }
     }
-}
 ```
 
-新增一个 new_map_rooms_and_corridors 函数生成一个复杂的地图,代码如下:
+更改 new_map 的实现，添加两个 rect，代码如下：
 
 ```rust
-pub fn new_map_rooms_and_corridors() -> Map {
+pub fn new_map() -> Map {
     let mut map = Map::default();
 
     let room1 = Rect::new(20, 15, 10, 15);
     let room2 = Rect::new(35, 15, 10, 15);
 
-    apply_room_to_map(&room1, &mut map);
-    apply_room_to_map(&room2, &mut map);
+    map.apply_room_to_map(&room1);
+    map.apply_room_to_map(&room2);
 
     map
 }
 ```
 
-这里使用了 Map 的 defalult 方法，但是现在这是默认实现的，不满足需要。手动为 Map 实现 default trait，代码如下:
+# 为房间添加过道
+
+为 map 添加 2 个函数，一个函数为房间添加横向的过道，一个是为房间添加纵向的过道。代码如下:
 
 ```rust
-impl Default for Map {
-    fn default() -> Self {
-        let map = Map {
-            tiles: vec![TileType::Wall; 80 * 50],
-            width: 80,
-            heigth: 50,
-        };
+    fn apply_horizontal_tunnel(&mut self, x1: i32, x2: i32, y: i32) {
+        for x in x1.min(x2)..=x1.max(x2) {
+            let index = self.xy_idx(x, y);
 
-        map
-    }
-}
-```
-
-更改 src/logic 下生成地图的函数，将 new_map 改为 new_map_rooms_and_corridors。
-运行代码，右键左上角的按钮，点击 playing，应该可以看到两个不互通的房间。
-按住 wasd，可以发现，玩家还可以穿墙。修改 user_input 函数，在移动之前，判断下一个 tile 是否可以移动。代码如下：
-
-```rust
-impl Position {
-    pub fn movement(&mut self, delta_x: i32, delta_y: i32, map: &Map) {
-        let next_x = 79.min(0.max(self.x + delta_x));
-        let next_y = 79.min(0.max(self.y + delta_y));
-
-        let idx = map.xy_idx(next_x, next_y);
-
-        if map.tiles[idx] == TileType::Floor {
-            self.x = next_x;
-            self.y = next_y;
+            if index > 0 && index < (self.width * self.height) as usize {
+                self.tiles[index] = TileType::Floor;
+            }
         }
     }
-}
-```
 
-user_input 更改之后的结果如下:
-
-```rust
-pub fn user_input(
-    keyboard_input: Res<ButtonInput<KeyCode>>,
-    mut q_player: Query<&mut Position, With<Player>>,
-    map: Res<Map>,
-) {
-    let mut x = 0;
-    let mut y = 0;
-
-    if keyboard_input.just_pressed(KeyCode::KeyA) {
-        x -= 1;
-    }
-
-    if keyboard_input.just_pressed(KeyCode::KeyD) {
-        x += 1;
-    }
-
-    if keyboard_input.just_pressed(KeyCode::KeyW) {
-        y += 1;
-    }
-
-    if keyboard_input.just_pressed(KeyCode::KeyS) {
-        y -= 1;
-    }
-
-    for mut position in q_player.iter_mut() {
-        position.movement(x, y, &map);
-    }
-}
-
-```
-
-现在玩家在屏幕上的移动便正常了。
-
-# 添加通道
-
-现在两个房间还无法连通，新建两个函数用来联通房间。代码如下：
-
-```rust
-fn apply_horizontal_tunnel(map: &mut Map, x1: i32, x2: i32, y: i32) {
-    for x in x1.min(x2)..=x1.max(x2) {
-        let idx = map.xy_idx(x, y);
-        if idx > 0 && idx < map.width * map.heigth {
-            map.tiles[idx] = TileType::Floor;
+    fn apply_vertical_tunnel(&mut self, y1: i32, y2: i32, x: i32) {
+        for y in y1.min(y2)..=y1.max(y2) {
+            let idx = self.xy_idx(x, y);
+            if idx > 0 && idx < (self.width * self.height) as usize {
+                self.tiles[idx] = TileType::Floor;
+            }
         }
     }
-}
-
-fn apply_vertical_tunnel(map: &mut Map, y1: i32, y2: i32, x: i32) {
-    for y in y1.min(y2)..=y1.max(y2) {
-        let idx = map.xy_idx(x, y);
-        if idx > 0 && idx < map.width * map.heigth {
-            map.tiles[idx] = TileType::Floor;
-        }
-    }
-}
 ```
 
-# 添加一个简易地牢
+# 制作一个地牢
 
-修改 new_map_rooms_and_corridors 的实现，代码如下:
+现在可以用现有的函数制作一个地牢了。修改 new_map 函数，代码如下:
 
 ```rust
-pub fn new_map_rooms_and_corridors() -> Map {
+pub fn new_map() -> Map {
     let mut map = Map::default();
 
     let mut rooms: Vec<Rect> = Vec::new();
@@ -192,8 +119,8 @@ pub fn new_map_rooms_and_corridors() -> Map {
     for _ in 0..MAX_ROOMS {
         let w = rng.range(MIN_SIZE, MAX_SIZE);
         let h = rng.range(MIN_SIZE, MAX_SIZE);
-        let x = rng.roll_dice(1, 80 - w - 1) - 1;
-        let y = rng.roll_dice(1, 50 - h - 1) - 1;
+        let x = rng.roll_dice(1, map.width - w - 1) - 1;
+        let y = rng.roll_dice(1, map.height - h - 1) - 1;
         let new_room = Rect::new(x, y, w, h);
         let mut ok = true;
         for other_room in rooms.iter() {
@@ -201,22 +128,8 @@ pub fn new_map_rooms_and_corridors() -> Map {
                 ok = false
             }
         }
-        //没有覆盖的room才能更新地图
         if ok {
-            apply_room_to_map(&new_room, &mut map);
-
-            if !rooms.is_empty() {
-                let (new_x, new_y) = new_room.center();
-                let (prev_x, prev_y) = rooms[rooms.len() - 1].center();
-                if rng.range(0, 2) == 1 {
-                    apply_horizontal_tunnel(&mut map, prev_x, new_x, prev_y);
-                    apply_vertical_tunnel(&mut map, prev_y, new_y, new_x);
-                } else {
-                    apply_vertical_tunnel(&mut map, prev_y, new_y, prev_x);
-                    apply_horizontal_tunnel(&mut map, prev_x, new_x, new_y);
-                }
-            }
-
+            map.apply_room_to_map(&new_room);
             rooms.push(new_room);
         }
     }
@@ -225,7 +138,36 @@ pub fn new_map_rooms_and_corridors() -> Map {
 }
 ```
 
-创建一个地图之后，原来初始化的玩家位置可能 floor,导致不能移动，因此玩家需要在地图之后创立。new_map_rooms_and_corridors 现在需要返回二个值，一个是地图，一个是所有的房间。房间用于玩家位置的创建。代码如下：
+这里使用随机数生成器生成了多个房间。要注意的是这里需要修改 map 的 default 函数，将 tiles 默认改成 Wall，才可以看到正常的地图。
+在房间生成后，为每个房间添加过道，代码如下：
+
+```rust
+ if ok {
+            map.apply_room_to_map(&new_room);
+
+            if !rooms.is_empty() {
+                let (new_x, new_y) = new_room.center();
+                let (prev_x, prev_y) = rooms[rooms.len() - 1].center();
+                if rng.range(0, 2) == 1 {
+                    map.apply_horizontal_tunnel(prev_x, new_x, prev_y);
+                    map.apply_vertical_tunnel(prev_y, new_y, new_x);
+                } else {
+                    map.apply_vertical_tunnel(prev_y, new_y, prev_x);
+                    map.apply_horizontal_tunnel(prev_x, new_x, new_y);
+                }
+            }
+
+            rooms.push(new_room);
+        }
+```
+
+运行代码，右键左上角的按钮，点击 playing，右键左上角的按钮，会出现下图界面。
+
+![运行界面](./images/first.png)
+
+# 设置玩家的初始位置
+
+将 new_map 改为 new_map_rooms_and_corridors,并返回房间列表。获取房间列表第一个房间的中心作为玩家的位置，代码如下:
 
 ```rust
 pub fn new_map_rooms_and_corridors() -> (Map, Vec<Rect>) {
@@ -241,8 +183,8 @@ pub fn new_map_rooms_and_corridors() -> (Map, Vec<Rect>) {
     for _ in 0..MAX_ROOMS {
         let w = rng.range(MIN_SIZE, MAX_SIZE);
         let h = rng.range(MIN_SIZE, MAX_SIZE);
-        let x = rng.roll_dice(1, 80 - w - 1) - 1;
-        let y = rng.roll_dice(1, 50 - h - 1) - 1;
+        let x = rng.roll_dice(1, map.width - w - 1) - 1;
+        let y = rng.roll_dice(1, map.height - h - 1) - 1;
         let new_room = Rect::new(x, y, w, h);
         let mut ok = true;
         for other_room in rooms.iter() {
@@ -250,19 +192,18 @@ pub fn new_map_rooms_and_corridors() -> (Map, Vec<Rect>) {
                 ok = false
             }
         }
-        //没有覆盖的room才能更新地图
         if ok {
-            apply_room_to_map(&new_room, &mut map);
+            map.apply_room_to_map(&new_room);
 
             if !rooms.is_empty() {
                 let (new_x, new_y) = new_room.center();
                 let (prev_x, prev_y) = rooms[rooms.len() - 1].center();
                 if rng.range(0, 2) == 1 {
-                    apply_horizontal_tunnel(&mut map, prev_x, new_x, prev_y);
-                    apply_vertical_tunnel(&mut map, prev_y, new_y, new_x);
+                    map.apply_horizontal_tunnel(prev_x, new_x, prev_y);
+                    map.apply_vertical_tunnel(prev_y, new_y, new_x);
                 } else {
-                    apply_vertical_tunnel(&mut map, prev_y, new_y, prev_x);
-                    apply_horizontal_tunnel(&mut map, prev_x, new_x, new_y);
+                    map.apply_vertical_tunnel(prev_y, new_y, prev_x);
+                    map.apply_horizontal_tunnel(prev_x, new_x, new_y);
                 }
             }
 
@@ -272,46 +213,87 @@ pub fn new_map_rooms_and_corridors() -> (Map, Vec<Rect>) {
 
     (map, rooms)
 }
+
 ```
 
-在 src/logic.rs 中，去除 spawn_character 函数，并更改 setup_game 函数，代码如下:
+在 setup_game 系统将第一个房间的中心位置赋给玩家。代码如下:
 
 ```rust
-pub fn setup_game(mut commands: Commands, mut map: ResMut<Map>) {
-    let terminal = Terminal::new([80, 50]).with_border(Border::single_line());
+fn setup_game(
+    mut commands: Commands,
+    texture_assets: Res<TextureAssets>,
+    mut layout_assets: ResMut<Assets<TextureAtlasLayout>>,
+    theme: Res<Theme>,
+) {
+    let (map, rooms) = new_map_rooms_and_corridors();
+
+    map.spawn_tiles(&mut commands, &texture_assets, &mut layout_assets, &theme);
+
+    commands.insert_resource(map);
+
+    let sprite_bundle = create_sprite_sheet_bundle(
+        &texture_assets,
+        &mut layout_assets,
+        theme.player_to_render(),
+    );
+    let first = rooms[0].center();
 
     commands.spawn((
-        // Spawn the terminal bundle from our terminal
-        TerminalBundle::from(terminal),
-        Name::new("Terminal"),
-    ));
-
-    let (map_instance, rooms) = new_map_rooms_and_corridors();
-
-    *map = map_instance;
-
-    //获取第一个房间的中心位置
-    let first_room_centerr = rooms[0].center();
-
-    commands.spawn_empty().insert((
+        sprite_bundle,
         Position {
-            x: first_room_centerr.0,
-            y: first_room_centerr.1,
+            x: first.0,
+            y: first.1,
         },
-        Renderable {
-            glyph: '@',
-            fg: Color::YELLOW,
-            bg: Color::BLACK,
-        },
-        Player {},
+        Player,
     ));
+}
+```
+
+# 限制玩家走向
+
+在 src/player.rs 中修改 player_input 系统，限制玩家走向 WAll 地形，代码如下:
+
+```rust
+pub fn player_input(
+    keyboard_input: Res<ButtonInput<KeyCode>>,
+    mut q_player: Query<&mut Position, With<Player>>,
+    map: Res<Map>,
+) {
+    let mut pos = match q_player.get_single_mut() {
+        Ok(pos) => pos,
+        Err(_) => return,
+    };
+
+    let input = get_input(&keyboard_input);
+
+    let new_pos_x = pos.x + input.x as i32;
+    let new_pos_y = pos.y + input.y as i32;
+
+    let index = map.xy_idx(new_pos_x, new_pos_y);
+
+    if map.tiles[index] == TileType::Wall {
+        return;
+    }
+
+    pos.x = new_pos_x;
+    pos.y = new_pos_y;
 }
 
 ```
 
-# 清除无用代码
+同时调整 player_input 的调度，在 PreUpdate 执行，改为 Update 执行。代码如下:
 
-现在 new_map 函数已经没有用到，在项目文件删除它。
+```rust
+impl Plugin for PlayerPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_systems(Update, (player_input,).run_if(in_state(GameState::Playing)));
+    }
+}
+```
+
+运行代码，右键左上角的按钮，点击 playing，右键左上角的按钮，会出现下图界面。
+
+![运行界面](./images/first.png)
 
 # 致谢
 
