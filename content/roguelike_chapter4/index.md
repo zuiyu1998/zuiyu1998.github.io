@@ -337,6 +337,189 @@ fn update_viewshed(
 
 ![运行界面](./images/second.png)
 
+# 让怪物动起来
+
+在 setup_game 系统生成敌人时添加一个 Viewshed,让它也有视野,代码如下:
+
+```rust
+ for room in map.rooms.iter().skip(1) {
+        let enemy_tile = EnemyType::G;
+
+        let enemy_pos = room.center();
+
+        let mut sprite_bundle = create_sprite_sheet_bundle(
+            &texture_assets,
+            &mut layout_assets,
+            theme.enemy_to_render(enemy_tile),
+        );
+
+        sprite_bundle.transform.translation.z = ENEMY_Z_INDEX;
+
+        let enemy = commands
+            .spawn((
+                sprite_bundle,
+                Position {
+                    x: enemy_pos.0,
+                    y: enemy_pos.1,
+                },
+                Enemy,
+                Viewshed {
+                    range: 9,
+                    visible_tiles: vec![],
+                    dirty: true,
+                },
+            ))
+            .id();
+
+        commands.entity(enemy).set_parent(map_entity);
+```
+
+在 src/enemy.rs 中添加一个系统 enemy_ai 来执行敌人的操作，代码如下：
+
+```rust
+fn enemy_ai(q_enemy: Query<(&Viewshed, &Position), With<Enemy>>) {
+    for (_view, _position) in q_enemy.iter() {
+        info!("monster considers their own existence")
+    }
+}
+```
+
+# 记录玩家的位置
+
+添加一个资源来记录玩家的位置。代码如下:
+
+```rust
+#[derive(Resource)]
+pub struct PlayerPosition(pub Point);
+
+```
+
+在 setup_game 系统生成玩家实体时插入该资源，代码如下:
+
+```rust
+commands.entity(player).set_parent(map_entity);
+
+commands.insert_resource(PlayerPosition(Point::new(first.0, first.1)));
+
+```
+
+在 src/player.rs 中调整 player_input 系统，在更新玩家位置后调整 PlayerPositon，代码如下:
+
+```rust
+pub fn player_input(
+    keyboard_input: Res<ButtonInput<KeyCode>>,
+    mut q_player: Query<&mut Position, With<Player>>,
+    mut player_position: ResMut<PlayerPosition>,
+    map: Res<Map>,
+) {
+    let mut pos = match q_player.get_single_mut() {
+        Ok(pos) => pos,
+        Err(_) => return,
+    };
+
+    let input = get_input(&keyboard_input);
+
+    let new_pos_x = pos.x + input.x as i32;
+    let new_pos_y = pos.y + input.y as i32;
+
+    let index = map.xy_idx(new_pos_x, new_pos_y);
+
+    if map.tiles[index] == TileType::Wall {
+        return;
+    }
+
+    pos.x = new_pos_x;
+    pos.y = new_pos_y;
+
+    player_position.0 = Point::new(new_pos_x, new_pos_y);
+}
+```
+
+# 让敌人拥有自己的名称
+
+在 setup_game 系统中生成敌人实体时为敌人添加一个名称，代码如下:
+
+```rust
+for (i, room) in map.rooms.iter().skip(1).enumerate() {
+        let enemy_tile = EnemyType::G;
+
+        let name;
+
+        match enemy_tile {
+            EnemyType::G => {
+                name = "Goblin".to_string();
+            }
+        }
+
+        let enemy_pos = room.center();
+
+        let mut sprite_bundle = create_sprite_sheet_bundle(
+            &texture_assets,
+            &mut layout_assets,
+            theme.enemy_to_render(enemy_tile),
+        );
+
+        sprite_bundle.transform.translation.z = ENEMY_Z_INDEX;
+
+        let enemy = commands
+            .spawn((
+                sprite_bundle,
+                Position {
+                    x: enemy_pos.0,
+                    y: enemy_pos.1,
+                },
+                Enemy,
+                Viewshed {
+                    range: 9,
+                    visible_tiles: vec![],
+                    dirty: true,
+                },
+                Name::new(format!("{} #{}", &name, i)),
+            ))
+            .id();
+
+        commands.entity(enemy).set_parent(map_entity);
+    }
+
+    commands.insert_resource(map);
+```
+
+# 让敌人在看到玩家时可以做些什么
+
+修改 src/enemy.rs 中的 enemy_ai 系统，代码如下:
+
+```rust
+fn enemy_ai(
+    mut q_enemy: Query<(&Viewshed, &mut Position, &Name), With<Enemy>>,
+    player_position: Res<PlayerPosition>,
+) {
+    for (view, _position, name) in q_enemy.iter_mut() {
+        if view.visible_tiles.contains(&player_position.0) {
+            info!("{} shouts insults", name);
+        }
+    }
+}
+```
+
+设置 enemy_ai 系统的调度条件，代码如下:
+
+```rust
+pub struct EnemyPlugin;
+
+impl Plugin for EnemyPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_systems(Update, (enemy_ai,).run_if(in_state(GameState::Playing)));
+    }
+}
+
+```
+
+同时将 EnemyPlugin 放入 src/lib.rs 的 GamePluginb 中。
+
+运行代码，右键左上角的按钮，点击 playing，右键左上角的按钮，会出现下图界面。
+
+![运行界面](./images/three.png)
+
 # 致谢
 
 - [bevy](https://github.com/bevyengine/bevy),游戏引擎

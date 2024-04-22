@@ -13,253 +13,413 @@ tags = ["roguelike", "bevy"]
 
 # 在每个房间内添加一个敌人
 
-使用组合而不是继承。
-敌人和玩家有一些共同的组件，比如 Position 和 Renderable。
-先使用这些共同的组件生成一个可见的敌人。
-在 src/logic/setup_game 的系统内，利用生成的 rooms 为每个房间添加一个敌人,代码如下:
+新增 src/theme.rs，同时将 map 中的代码关于 Theme 的迁移。代码如下:
 
 ```rust
-///新加的代码
-rooms.iter().skip(1).for_each(|room| {
-        let center = room.center();
+pub struct ThemePlugin;
 
-        commands.spawn_empty().insert((
-            Position {
-                x: center.0,
-                y: center.1,
+impl Plugin for ThemePlugin {
+    fn build(&self, app: &mut App) {
+        app.init_resource::<Theme>();
+    }
+}
+
+pub trait MapTheme: 'static + Sync + Send {
+    fn tile_to_render(&self, tile_type: TileType) -> Glyph;
+
+    fn revealed_tile_to_render(&self, tile_type: TileType) -> Glyph;
+
+    fn player_to_render(&self) -> Glyph;
+}
+
+#[derive(Resource, Deref)]
+pub struct Theme(Box<dyn MapTheme>);
+
+impl Default for Theme {
+    fn default() -> Self {
+        Theme(Box::new(DefaultTheme))
+    }
+}
+
+pub struct DefaultTheme;
+
+impl MapTheme for DefaultTheme {
+    fn tile_to_render(&self, tile_type: TileType) -> Glyph {
+        match tile_type {
+            TileType::Floor => Glyph {
+                color: Color::rgba(0.529, 0.529, 0.529, 1.0),
+                index: 219,
             },
-            Renderable {
-                glyph: 'g',
-                fg: Color::RED,
-                bg: Color::BLACK,
+            TileType::Wall => Glyph {
+                color: Color::rgba(0.0, 1.0, 0.0, 1.0),
+                index: '#' as usize,
             },
-            Viewshed {
-                visible_tiles: vec![],
-                range: 8,
-                dirty: false,
+        }
+    }
+
+    fn revealed_tile_to_render(&self, tile_type: TileType) -> Glyph {
+        match tile_type {
+            TileType::Floor => Glyph {
+                color: Color::rgba(0.529, 0.529, 0.529, 1.0),
+                index: 219,
             },
-        ));
-    });
+            TileType::Wall => Glyph {
+                color: Color::rgba(0.529, 0.529, 0.529, 1.0),
+                index: '#' as usize,
+            },
+        }
+    }
+
+    fn player_to_render(&self) -> Glyph {
+        Glyph {
+            color: Color::YELLOW,
+            index: 64,
+        }
+    }
+}
 ```
 
-同时需要修改 src/map.rs 中 update_view 系统的参数,因为现在的是实现是更新了所有具有 Position 和 Viewshed 的实体。上期只有 player 的实体存在，所以是可以实现的。但是现在引入多个敌人实体，它们同样具有 Position 和 Viewshed,所以需要一个约束。代码如下:
+注意将 ThemePlugin 放入 src/lib.rs 的 GamePlugin 中。
+在 src/enemy.rs 中新增一个 EnemyTile 和 EnemyPlugin。代码如下:
 
 ```rust
-pub fn update_view(
-    mut q_player_view: Query<(&Position, &mut Viewshed), With<Player>>,
-    mut map: ResMut<Map>,
-)
+pub struct EnemyPlugin;
+
+impl Plugin for EnemyPlugin {
+    fn build(&self, app: &mut App) {}
+}
+
+pub enum EnemyType {
+    G,
+}
+
+
 ```
 
-With<Player>就是添加的约束。
-运行代码，右键左上角的按钮，点击 playing，右键左上角的按钮，会出现下图界面。
-![运行界面](./images/first.png)
-
-可以看到，每个敌人的位置都被透视了。在 src/render.rs 的 render 系统中修复这个问题。这个问题的原因是在渲染 renderable 数据的时候没有判断可见性。代码如下:
+为 src/theme.rs 中的 MapTheme 添加一个新的函数，代码如下：
 
 ```rust
-q_position_and_renderable
-        .iter()
-        .for_each(|(position, renderable)| {
-            let idx = map.xy_idx(position.x, position.y);
+pub trait MapTheme: 'static + Sync + Send {
+    fn tile_to_render(&self, tile_type: TileType) -> Glyph;
 
-            //添加这个可见性判定
-            if map.visible_tiles[idx] {
-                let tile: FormattedTile = renderable.clone().into();
+    fn revealed_tile_to_render(&self, tile_type: TileType) -> Glyph;
 
-                term.put_char(position.clone(), tile);
-            }
-        });
+    fn player_to_render(&self) -> Glyph;
+
+    fn enemy_to_render(&self, enemy_type: EnemyType) -> Glyph;
+}
 ```
 
-# 添加多个类型的敌人
-
-不同类型的敌人应该有很多不同，但是现在先实现一个简易的版本，就是显示的不同，利用随机数生成器生成一个数据，然后根据这个数据生成不同的字符，利用这个字符构建 Renderable。修改 src/logic.rs 中 setup_game 系统，代码如下:
+为 DefaultTheme 添加新的实现，代码如下:
 
 ```rust
+fn enemy_to_render(&self, enemy_type: EnemyType) -> Glyph {
+        match enemy_type {
+            EnemyType::G => Glyph {
+                color: Color::RED,
+                index: 'G' as usize,
+            },
+        }
+    }
+```
+
+最后在 src/logic.rs 的 setup_game 系统添加生成敌人的逻辑。在这一步之前，首先对 map 进行一定的改造，将 room 保存在 map 中。代码如下:
+
+```rust
+#[derive(Resource, Debug)]
+pub struct Map {
+    pub width: i32,
+    pub height: i32,
+    pub tiles: Vec<TileType>,
+    pub revealed_tiles: Vec<bool>,
+    pub rooms: Vec<Rect>,
+}
+
+```
+
+将 src.map.rs 中 new_map_rooms_and_corridors 函数改为如下所示:
+
+```rust
+pub fn new_map_rooms_and_corridors() -> Map {
+    let mut map = Map::default();
+
+    let mut rooms: Vec<Rect> = Vec::new();
+    const MAX_ROOMS: i32 = 30;
+    const MIN_SIZE: i32 = 6;
+    const MAX_SIZE: i32 = 10;
+
     let mut rng = RandomNumberGenerator::new();
 
-    rooms.iter().skip(1).for_each(|room| {
-        let center = room.center();
-
-        let roll = rng.roll_dice(1, 2);
-
-        let glyph;
-
-        match roll {
-            1 => glyph = 'g',
-            _ => glyph = 'o',
+    for _ in 0..MAX_ROOMS {
+        let w = rng.range(MIN_SIZE, MAX_SIZE);
+        let h = rng.range(MIN_SIZE, MAX_SIZE);
+        let x = rng.roll_dice(1, map.width - w - 1) - 1;
+        let y = rng.roll_dice(1, map.height - h - 1) - 1;
+        let new_room = Rect::new(x, y, w, h);
+        let mut ok = true;
+        for other_room in rooms.iter() {
+            if new_room.intersect(other_room) {
+                ok = false
+            }
         }
+        if ok {
+            map.apply_room_to_map(&new_room);
 
-        commands.spawn_empty().insert((
+            if !rooms.is_empty() {
+                let (new_x, new_y) = new_room.center();
+                let (prev_x, prev_y) = rooms[rooms.len() - 1].center();
+                if rng.range(0, 2) == 1 {
+                    map.apply_horizontal_tunnel(prev_x, new_x, prev_y);
+                    map.apply_vertical_tunnel(prev_y, new_y, new_x);
+                } else {
+                    map.apply_vertical_tunnel(prev_y, new_y, prev_x);
+                    map.apply_horizontal_tunnel(prev_x, new_x, new_y);
+                }
+            }
+
+            rooms.push(new_room);
+        }
+    }
+
+    map.rooms = rooms;
+
+    map
+}
+```
+
+最后为 settup_game 系统添加生成怪物的逻辑,除了第一个房间，其他每个房间都在中心位置生成一个敌人。代码如下:
+
+```rust
+fn setup_game(
+    mut commands: Commands,
+    texture_assets: Res<TextureAssets>,
+    mut layout_assets: ResMut<Assets<TextureAtlasLayout>>,
+    theme: Res<Theme>,
+) {
+    let map = new_map_rooms_and_corridors();
+
+    let map_entity = map.spawn_tiles(&mut commands, &texture_assets, &mut layout_assets, &theme);
+
+    let mut sprite_bundle = create_sprite_sheet_bundle(
+        &texture_assets,
+        &mut layout_assets,
+        theme.player_to_render(),
+    );
+
+    sprite_bundle.transform.translation.z = PLAYER_Z_INDEX;
+
+    let first = map.rooms[0].center();
+
+    let player = commands
+        .spawn((
+            sprite_bundle,
             Position {
-                x: center.0,
-                y: center.1,
+                x: first.0,
+                y: first.1,
             },
-            Renderable {
-                glyph,
-                fg: Color::RED,
-                bg: Color::BLACK,
-            },
+            Player,
             Viewshed {
+                range: 9,
                 visible_tiles: vec![],
-                range: 8,
-                dirty: false,
+                dirty: true,
+            },
+            Name::new("Player"),
+        ))
+        .id();
+
+    commands.entity(player).set_parent(map_entity);
+
+    commands.insert_resource(PlayerEntity(player));
+
+    for room in map.rooms.iter().skip(1) {
+        let enemy_tile = EnemyType::G;
+
+        let enemy_pos = room.center();
+
+        let sprite_bundle = create_sprite_sheet_bundle(
+            &texture_assets,
+            &mut layout_assets,
+            theme.enemy_to_render(enemy_tile),
+        );
+
+        commands.spawn((
+            sprite_bundle,
+            Position {
+                x: enemy_pos.0,
+                y: enemy_pos.1,
             },
         ));
-    });
+    }
+
+    commands.insert_resource(map);
+}
 ```
 
 运行代码，右键左上角的按钮，点击 playing，右键左上角的按钮，会出现下图界面。
 
 ![运行界面](./images/first.png)
+所有的敌人都可以看到，接下来修复这个问题。
 
-# 制作敌人的 ai 系统
+# 玩家只能看见能看见的东西
 
-首先定义一个 Monster 组件标记敌人。在 src/logic 下新增如下代码:
-
-```rust
-#[derive(Component, Debug)]
-pub struct Monster {}
-```
-
-在 src/logic.rs 中新增一个 monster_ai 系统。代码如下:
+在 map 中新增一个字段 visible_tiles 用来保存所有可见的位置，代码如下:
 
 ```rust
-pub fn monster_ai(mut q_monster: Query<(&mut Position, &mut Viewshed), With<Monster>>) {
-    for _monster in q_monster.iter_mut() {
-        //占位
-        info!("Monster considers their own existence")
-    }
-}
-
-```
-
-同时修改 src/logic.rs 中 setup_game 系统，为敌人实体添加 Monster 组件，代码如下:
-
-```rust
-pub fn monster_ai(mut q_monster: Query<(&mut Position, &mut Viewshed, &Monster)>) {
-    for _monster in q_monster.iter_mut() {
-        //占位
-        info!("Monster considers their own existence")
-    }
+pub struct Map {
+    pub width: i32,
+    pub height: i32,
+    pub tiles: Vec<TileType>,
+    pub revealed_tiles: Vec<bool>,
+    pub rooms: Vec<Rect>,
+    pub visible_tiles: Vec<bool>,
 }
 ```
 
-最后修改 src/map.rs 中的 updat_view 系统，原先这里实现的玩家实体 Viewshed 的更新，现在敌人的 Viewshed 同样要更新。代码更改如下：
+在 src/common/mod.rs 中修改 update_viewshed 系统，代码如下:
 
 ```rust
-pub fn update_view(
-    mut q_view: Query<(&Position, &mut Viewshed)>,
+fn update_viewshed(
+    mut q_viewshed: Query<(&Position, &mut Viewshed, Entity)>,
     mut map: ResMut<Map>,
-    q_player: Query<Entity, With<Player>>,
+    player_entity: Res<PlayerEntity>,
 ) {
-    for (pos, mut viewshed) in q_view.iter_mut() {
-        if viewshed.dirty {
-            viewshed.dirty = false;
-
-            viewshed.visible_tiles.clear();
-            viewshed.visible_tiles = field_of_view(Point::new(pos.x, pos.y), viewshed.range, &*map);
-            viewshed.visible_tiles.retain(|p| {
-                p.x >= 0 && p.x < map.width as i32 && p.y >= 0 && p.y < map.height as i32
-            });
+    for (pos, mut viewshed, entity) in q_viewshed.iter_mut() {
+        if !viewshed.dirty {
+            continue;
         }
-    }
 
-    for player_entity in q_player.iter() {
-        if let Ok((_, viewshed)) = q_view.get(player_entity) {
+        viewshed.visible_tiles.clear();
+        viewshed.visible_tiles = field_of_view(Point::new(pos.x, pos.y), viewshed.range, &*map);
+        viewshed
+            .visible_tiles
+            .retain(|p| p.x >= 0 && p.x < map.width && p.y >= 0 && p.y < map.height);
+
+        if entity == player_entity.0 {
             for t in map.visible_tiles.iter_mut() {
                 *t = false
             }
 
-            for tile in viewshed.visible_tiles.iter() {
-                let idx = map.xy_idx(tile.x, tile.y);
+            for point in viewshed.visible_tiles.iter() {
+                let idx = map.xy_idx(point.x, point.y);
 
                 map.revealed_tiles[idx] = true;
-
                 map.visible_tiles[idx] = true;
             }
         }
     }
 }
+```
+
+在 update_viewshed 中更新了每个可见的位置，
+现在 src/enemy.rs 中添加一个 Enemy 组件，用来标识敌人。代码如下:
+
+```rust
+#[derive(Debug, Component)]
+pub struct Enemy;
 
 ```
 
-# 让玩家和敌人拥有自己名字
-
-bevy 提供了一个 Name 的组件用来标识一个实体的名称，使用这个为玩家和敌人提供一个名称。修改 src/logic.rs 下的 setup_game 系统。代码如下:
+更改 src/logic.rs 下的 setup_game 系统，为每个敌人添加 Enemy 组件。代码如下:
 
 ```rust
- rooms.iter().skip(1).enumerate().for_each(|(i, room)| {
-        let center = room.center();
+for room in map.rooms.iter().skip(1) {
+        let enemy_tile = EnemyType::G;
 
-        let roll = rng.roll_dice(1, 2);
+        let enemy_pos = room.center();
 
-        let glyph;
-        let name;
+        let sprite_bundle = create_sprite_sheet_bundle(
+            &texture_assets,
+            &mut layout_assets,
+            theme.enemy_to_render(enemy_tile),
+        );
 
-        match roll {
-            1 => {
-                glyph = 'g';
-                name = "Goblin".to_string();
-            }
-            _ => {
-                glyph = 'o';
-                name = "Orc".to_string();
-            }
-        }
+        let enemy = commands
+            .spawn((
+                sprite_bundle,
+                Position {
+                    x: enemy_pos.0,
+                    y: enemy_pos.1,
+                },
+                Enemy,
+            ))
+            .id();
 
-        commands.spawn_empty().insert((
-            Position {
-                x: center.0,
-                y: center.1,
-            },
-            Renderable {
-                glyph,
-                fg: Color::RED,
-                bg: Color::BLACK,
-            },
-            Viewshed {
-                visible_tiles: vec![],
-                range: 8,
-                dirty: false,
-            },
-            Monster {},
-            Name::new(format!("{} #{}", name, i)),
-        ));
-    });
+        commands.entity(enemy).set_parent(map_entity);
+    }
 ```
 
-# 让敌人发现玩家
+set_parent 是为了让敌人和玩家都位于 Map 的实体下。
 
-现在让我们一步一步实现敌人的 ai，首先让敌人发现玩家。代码如下:
+最后更改 update_visibility 系统，只有可见的位置才会显示处理。代码如下:
 
 ```rust
-pub fn monster_ai(
-    mut set: ParamSet<(
-        Query<(&mut Position, &mut Viewshed, &Monster, &Name)>,
-        Query<&Position, With<Player>>,
-    )>,
+fn update_visibility(
+    mut q_position: Query<(&mut Visibility, &Position, &mut Sprite, Entity)>,
+    q_tiles: Query<&MapTile>,
+    map: Res<Map>,
+    theme: Res<Theme>,
 ) {
-    let player = set.p1();
-    let player_pos = player.single().clone();
+    for (mut visibility, pos, mut sprite, entity) in q_position.iter_mut() {
+        let idx = map.xy_idx(pos.x, pos.y);
 
-    for (_pos, viewshed, _, name) in set.p0().iter_mut() {
-        //占位
+        if map.visible_tiles[idx] {
+            *visibility = Visibility::Visible;
 
-        if viewshed
-            .visible_tiles
-            .contains(&Point::new(player_pos.x, player_pos.y))
-        {
-            info!("{} shouts insults", name);
+            if q_tiles.get(entity).is_ok() {
+                let tile = map.tiles[idx];
+                let glyph = theme.tile_to_render(tile);
+                sprite.color = glyph.color;
+            }
+        } else {
+            if q_tiles.get(entity).is_ok() && map.revealed_tiles[idx] {
+                *visibility = Visibility::Visible;
+
+                let tile = map.tiles[idx];
+
+                let glyph = theme.revealed_tile_to_render(tile);
+                sprite.color = glyph.color;
+            } else {
+                *visibility = Visibility::Hidden;
+            }
         }
     }
 }
 ```
 
-正常情况下，运行代码，应该可以看到日志中输出了 xx shouts insults,但是在看到敌人时没有出现，这是因为敌人实体的 Viewshed 组件的 dirty 默认为 false。修改这个字段，整个系统就可以正常工作了。
+最后，设置敌人的层次，在 src/consts.rs 中新增 ENEMY_Z_INDEX 为 9.0。在 setup_game 系统生成敌人实体是设置层次。代码如下:
 
-> ParamSet 是一个特殊的参数，它可以同时拥有同个组件数据的多个引用。
+```rust
+for room in map.rooms.iter().skip(1) {
+        let enemy_tile = EnemyType::G;
+
+        let enemy_pos = room.center();
+
+        let mut sprite_bundle = create_sprite_sheet_bundle(
+            &texture_assets,
+            &mut layout_assets,
+            theme.enemy_to_render(enemy_tile),
+        );
+
+        sprite_bundle.transform.translation.z = ENEMY_Z_INDEX;
+
+        let enemy = commands
+            .spawn((
+                sprite_bundle,
+                Position {
+                    x: enemy_pos.0,
+                    y: enemy_pos.1,
+                },
+                Enemy,
+            ))
+            .id();
+
+        commands.entity(enemy).set_parent(map_entity);
+    }
+```
+
+运行代码，右键左上角的按钮，点击 playing，右键左上角的按钮，会出现下图界面。
+
+![运行界面](./images/second.png)
 
 # 致谢
 
