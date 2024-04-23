@@ -45,13 +45,13 @@ app.add_systems(
 
 ```
 
-更改 user_input 系统，如果输入是有效的，则更改系统进入 PlayerTurn。代码如下:
+更改 player_input 系统，如果输入是有效的，则更改系统进入 PlayerTurn。代码如下:
 
 ```rust
-pub fn user_input() {
+pub fn player_input() {
     ...
-    if x != 0 || y != 0 {
-        next_state.set(RunTurnState::PlayerTurn);
+    if !input.x.is_zero() {
+        run_turn_ns.set(RunTurnState::PlayerTurn);
     }
 }
 
@@ -83,7 +83,7 @@ app.add_systems(
 );
 ```
 
-更改 src/logic.rs 中 monster_ai 系统的调度，放入 RunTurnState::MonsterTurn 的状态中，代码如下:
+更改 src/enemy.rs 中 monster_ai 系统的调度，放入 RunTurnState::MonsterTurn 的状态中，代码如下:
 
 ```rust
 app.add_systems(
@@ -102,7 +102,3 @@ app.add_systems(
 - [bevy_editor_pls](https://github.com/jakobhellermann/bevy_editor_pls),可视化编辑器
 - [bracket-random](https://github.com/amethyst/bracket-lib)，随机数生成器
 - [bracket-pathfinding](https://github.com/amethyst/bracket-lib) 寻路
-
-```
-
-```
