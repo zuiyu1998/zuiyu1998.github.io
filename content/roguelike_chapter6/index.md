@@ -55,7 +55,7 @@ tags = ["roguelike", "bevy"]
 
 为 Map 的 BaseMap 的 trait 添加 get_pathing_distance 的自定义实现，代码如下:
 
-```
+```rust
 fn get_pathing_distance(&self, idx1: usize, idx2: usize) -> f32 {
     let w = self.width as usize;
     let p1 = Point::new(idx1 % w, idx1 / w);
@@ -67,34 +67,26 @@ fn get_pathing_distance(&self, idx1: usize, idx2: usize) -> f32 {
 最后我们更改 monster_ai 系统，使用 a_star 算法，规划敌人和玩家的路径，并把最新的路径赋给敌人。代码如下:
 
 ```rust
-pub fn monster_ai(
-    mut set: ParamSet<(
-        Query<(&mut Position, &mut Viewshed, &Monster, &Name)>,
-        Query<&Position, With<Player>>,
-    )>,
-
+fn enemy_ai(
+    mut q_enemy: Query<(&mut Viewshed, &mut Position, &Name), With<Enemy>>,
+    player_position: Res<PlayerPosition>,
     mut map: ResMut<Map>,
 ) {
-    let player = set.p1();
-    let player_pos = player.single().clone();
-
-    for (mut pos, mut viewshed, _, name) in set.p0().iter_mut() {
-        //占位
-
+    for (mut viewshed, mut position, name) in q_enemy.iter_mut() {
         if viewshed
             .visible_tiles
-            .contains(&Point::new(player_pos.x, player_pos.y))
+            .contains(&Point::new(player_position.0.x, player_position.0.y))
         {
             info!("{} shouts insults", name);
 
             let path = a_star_search(
-                map.xy_idx(pos.x, pos.y) as i32,
-                map.xy_idx(player_pos.x, player_pos.y) as i32,
+                map.xy_idx(position.x, position.y) as i32,
+                map.xy_idx(player_position.0.x, player_position.0.y) as i32,
                 &mut *map,
             );
             if path.success && path.steps.len() > 1 {
-                pos.x = path.steps[1] as i32 % (map.width as i32);
-                pos.y = path.steps[1] as i32 / (map.width as i32);
+                position.x = path.steps[1] as i32 % (map.width as i32);
+                position.y = path.steps[1] as i32 / (map.width as i32);
                 viewshed.dirty = true;
             }
         }
@@ -112,7 +104,7 @@ pub fn monster_ai(
 
 ```
 
-再次运行代码，默认 60 帧的频率还是太快，调整为默认 2 帧,修改 LogicPlugin 的 plugin trait 实现，代码如下:
+再次运行代码，默认 60 帧的频率还是太快，调整为默认 2 帧,修改 EnemyPlugin 的 plugin trait 实现，代码如下:
 
 ```rust
        let fix_time = Time::<Fixed>::from_hz(2.0);
@@ -131,7 +123,7 @@ pub fn monster_ai(
 
 在 map 中添加字段记录不可行进地块的标识，Map 的定义如下:
 
-```
+```rust
 #[derive(Resource)]
 pub struct Map {
     pub width: usize,
@@ -169,7 +161,7 @@ pub struct Map {
 在 Map 中新增一个 BlocksTile 组件，同时添加一个系统将 BlocksTile 组件的数据缓存。
 在 src/map.rs 新增 BlocksTile 组件，代码如下:
 
-```
+```rust
 #[derive(Component, Debug)]
 pub struct BlocksTile {}
 ```
@@ -192,7 +184,7 @@ pub fn update_blocks(q_blocks: Query<&Position, With<BlocksTile>>, mut map: ResM
 
 # 防止敌人踩踏玩家
 
-在 logic/map.rs 中修改 monster_ai 系统，在寻路之前，先进行距离判断，代码如下:
+在 src/enemy.rs 中修改 monster_ai 系统，在寻路之前，先进行距离判断，代码如下:
 
 ```rust
 info!("{} shouts insults", name);
@@ -209,22 +201,37 @@ if distance < 1.5 {
 
 # 防止玩家踩踏敌人
 
-修改 Positon 的 movement 函数，通过判断 block 信息决定是否前进。代码如下:
+修改 src/player.rs 中 player_input 系统，通过判断 block 信息决定是否前进。代码如下:
 
 ```rust
-pub fn movement(&mut self, delta_x: i32, delta_y: i32, map: &Map, view: &mut Viewshed) {
-    let next_x = 79.min(0.max(self.x + delta_x));
-    let next_y = 79.min(0.max(self.y + delta_y));
+pub fn player_input(
+    keyboard_input: Res<ButtonInput<KeyCode>>,
+    mut q_player: Query<&mut Position, With<Player>>,
+    mut player_position: ResMut<PlayerPosition>,
+    map: Res<Map>,
+) {
+    let mut pos = match q_player.get_single_mut() {
+        Ok(pos) => pos,
+        Err(_) => return,
+    };
 
-    let idx = map.xy_idx(next_x, next_y);
+    let input = get_input(&keyboard_input);
 
-    if !map.blocked[idx] {
-        self.x = next_x;
-        self.y = next_y;
+    let new_pos_x = pos.x + input.x as i32;
+    let new_pos_y = pos.y + input.y as i32;
 
-        view.dirty = true;
+    let index = map.xy_idx(new_pos_x, new_pos_y);
+
+    if map.blocked[index] {
+        return;
     }
+
+    pos.x = new_pos_x;
+    pos.y = new_pos_y;
+
+    player_position.0 = Point::new(new_pos_x, new_pos_y);
 }
+
 ```
 
 # 允许玩家对角线移动
@@ -273,7 +280,7 @@ fn get_available_exits(&self, idx: usize) -> SmallVec<[(usize, f32); 10]> {
 
 # 添加 战斗状态
 
-在 src/logic.rs 中添加一个 CombatStats 组件，它保存了玩家和敌人的一些有用的数据，比如血量。代码定义如下:
+在 src/common/mod.rs 中添加一个 CombatStats 组件，它保存了玩家和敌人的一些有用的数据，比如血量。代码定义如下:
 
 ```rust
 #[derive(Component, Debug)]
@@ -327,7 +334,7 @@ pub struct Map {
 
 为 map 新增一个函数，用来清空 tile_content 的数据。代码如下:
 
-```
+```rust
 ///清除tile_content
 pub fn clear_content_index(&mut self) {
     for content in self.tile_content.iter_mut() {
@@ -340,9 +347,9 @@ pub fn clear_content_index(&mut self) {
 
 ```rust
 pub fn map_index(
-    q_position: Query<(&Position, Entity)>,
-    q_blocks: Query<Entity, With<BlocksTile>>,
+    q_blocks: Query<&Position, With<BlocksTile>>,
     mut map: ResMut<Map>,
+    q_position: Query<(&Position, Entity)>,
 ) {
     map.populate_blocked();
     map.clear_content_index();
@@ -361,23 +368,29 @@ pub fn map_index(
 
 # 让玩家可以攻击
 
-更改 src/logic.rs 中 user_input 系统，在玩家移动之前判断是否可以对敌人进行攻击。新增一个 handle_user_input 系统来处理 user_inut,代码如下。
+更改 src/logic.rs 中 player_input 系统，在玩家移动之前判断是否可以对敌人进行攻击。代码如下。
 
 ```rust
-fn handle_user_input(
-    position: &mut Position,
-    delta_x: i32,
-    delta_y: i32,
-    map: &Map,
-    view: &mut Viewshed,
-    q_combat_stats: &Query<&mut CombatStats>,
+pub fn player_input(
+    keyboard_input: Res<ButtonInput<KeyCode>>,
+    mut q_player: Query<&mut Position, With<Player>>,
+    mut player_position: ResMut<PlayerPosition>,
+    map: Res<Map>,
+    q_combat_stats: Query<&mut CombatStats>,
 ) {
-    let next_x = ((map.width - 1) as i32).min(0.max(position.x + delta_x));
-    let next_y = ((map.height - 1) as i32).min(0.max(position.y + delta_y));
+    let mut pos = match q_player.get_single_mut() {
+        Ok(pos) => pos,
+        Err(_) => return,
+    };
 
-    let idx = map.xy_idx(next_x, next_y);
+    let input = get_input(&keyboard_input);
 
-    for potential_target in map.tile_content[idx].iter() {
+    let new_pos_x = pos.x + input.x as i32;
+    let new_pos_y = pos.y + input.y as i32;
+
+    let index = map.xy_idx(new_pos_x, new_pos_y);
+
+    for potential_target in map.tile_content[index].iter() {
         let target = q_combat_stats.get(*potential_target);
         match target {
             Err(_e) => {
@@ -391,46 +404,14 @@ fn handle_user_input(
         }
     }
 
-    if !map.blocked[idx] {
-        position.x = next_x;
-        position.y = next_y;
-
-        view.dirty = true;
-    }
-}
-```
-
-更改 user_input 系统中原来的 movement 系统，现在 user_input 系统如下:
-
-```rust
-pub fn user_input(
-    keyboard_input: Res<ButtonInput<KeyCode>>,
-    mut q_player: Query<(&mut Position, &mut Viewshed), With<Player>>,
-    map: Res<Map>,
-    q_combat_stats: Query<&mut CombatStats>,
-) {
-    let mut x = 0;
-    let mut y = 0;
-
-    if keyboard_input.just_pressed(KeyCode::KeyA) {
-        x -= 1;
+    if map.blocked[index] {
+        return;
     }
 
-    if keyboard_input.just_pressed(KeyCode::KeyD) {
-        x += 1;
-    }
+    pos.x = new_pos_x;
+    pos.y = new_pos_y;
 
-    if keyboard_input.just_pressed(KeyCode::KeyW) {
-        y += 1;
-    }
-
-    if keyboard_input.just_pressed(KeyCode::KeyS) {
-        y -= 1;
-    }
-
-    for (mut position, mut viewshed) in q_player.iter_mut() {
-        handle_user_input(&mut position, x, y, &map, &mut viewshed, &q_combat_stats);
-    }
+    player_position.0 = Point::new(new_pos_x, new_pos_y);
 }
 ```
 
@@ -438,7 +419,7 @@ pub fn user_input(
 
 用一句话总结玩家攻击的行为。玩家对某个敌人发动了攻击，敌人收到玩家造成的伤害，敌人已经死亡。
 实现一个系统实现玩家对某个敌人发动了攻击。
-在 src/logic.rs 中添加一个组件用来标识被攻击者的组件，代码如下：
+在 src/common/mod.rs 中添加一个组件用来标识被攻击者的组件，代码如下：
 
 ```rust
 #[derive(Component, Debug, Clone)]
@@ -447,24 +428,31 @@ pub struct WantsToMelee {
 }
 ```
 
-在 src/logic.rs 的 user_input 系统中判断下一个移动的地图是否为可攻击的对象，如果有，添加一个 WantsToMelee 组件。代码如下:
+在 src/player.rs 的 player_input 系统中判断下一个移动的地图是否为可攻击的对象，如果有，添加一个 WantsToMelee 组件。代码如下:
 
 ```rust
-fn handle_user_input(
-    position: &mut Position,
-    delta_x: i32,
-    delta_y: i32,
-    map: &Map,
-    view: &mut Viewshed,
-    q_combat_stats: &Query<&mut CombatStats>,
-    commands: &mut EntityCommands,
+pub fn player_input(
+    keyboard_input: Res<ButtonInput<KeyCode>>,
+    mut q_player: Query<&mut Position, With<Player>>,
+    mut player_position: ResMut<PlayerPosition>,
+    player_entity: Res<PlayerEntity>,
+    map: Res<Map>,
+    q_combat_stats: Query<&mut CombatStats>,
+    mut commands: Commands,
 ) {
-    let next_x = ((map.width - 1) as i32).min(0.max(position.x + delta_x));
-    let next_y = ((map.height - 1) as i32).min(0.max(position.y + delta_y));
+    let mut pos = match q_player.get_single_mut() {
+        Ok(pos) => pos,
+        Err(_) => return,
+    };
 
-    let idx = map.xy_idx(next_x, next_y);
+    let input = get_input(&keyboard_input);
 
-    for potential_target in map.tile_content[idx].iter() {
+    let new_pos_x = pos.x + input.x as i32;
+    let new_pos_y = pos.y + input.y as i32;
+
+    let index = map.xy_idx(new_pos_x, new_pos_y);
+
+    for potential_target in map.tile_content[index].iter() {
         let target = q_combat_stats.get(*potential_target);
         match target {
             Err(_e) => {
@@ -476,7 +464,7 @@ fn handle_user_input(
 
                 let entity = *potential_target;
                 //生成子实体添加攻击组件
-                commands.with_children(|parent| {
+                commands.entity(player_entity.0).with_children(|parent| {
                     parent.spawn(WantsToMelee { target: entity });
                 });
 
@@ -485,22 +473,23 @@ fn handle_user_input(
         }
     }
 
-    if !map.blocked[idx] {
-        position.x = next_x;
-        position.y = next_y;
-
-        view.dirty = true;
+    if map.blocked[index] {
+        return;
     }
-}
 
+    pos.x = new_pos_x;
+    pos.y = new_pos_y;
+
+    player_position.0 = Point::new(new_pos_x, new_pos_y);
+}
 
 ```
 
-修复 map_index 系统添加了 player 的 bug。在 map_index 系统添加了 player 的索引，handle_user_input 此时会出现自己攻击自己的 bug。修复之后的代码如下:
+修复 map_index 系统添加了 player 的 bug。在 map_index 系统添加了 player 的索引，player_input 此时会出现自己攻击自己的 bug。修复之后的代码如下:
 
 ```rust
 pub fn map_index(
-    q_position: Query<(&Position, Entity)>,
+    q_position: Query<(&Position, Entity), With<Enemy>>,
     q_blocks: Query<Entity, With<BlocksTile>>,
     mut map: ResMut<Map>,
 ) {
@@ -518,9 +507,9 @@ pub fn map_index(
 }
 ```
 
-添加一个系统计算收到的伤害。在 logic.rs 中新增一个伤害组件，代码如下：
+添加一个系统计算收到的伤害。在 src/common/mod.rs 中新增一个伤害组件，代码如下：
 
-```
+```rust
 #[derive(Component, Debug)]
 pub struct SufferDamage {
     pub amount: Vec<i32>,
@@ -610,7 +599,7 @@ pub struct SufferDamage {
 }
 ```
 
-同时在 LogicPlugin 中注册 SufferDamage 和 WantsToMelee，代码如下:
+同时在 CommonPlugin 中注册 SufferDamage 和 WantsToMelee，代码如下:
 
 ```rust
 impl Plugin for LogicPlugin {
@@ -622,7 +611,6 @@ impl Plugin for LogicPlugin {
 }
 ```
 
-将位于 src/map.rs 中的 CombatStats 定义移入到 src/logic.rs 中。
 运行代码，右键左上角的按钮，点击 playing，右键左上角的按钮，点击 player 实体，会出现下图界面。
 ![运行界面](./images/first.png)
 
@@ -640,66 +628,25 @@ pub fn delete_the_dead(mut commands: Commands, q_combat_stats: Query<(&CombatSta
 
 # 让敌人攻击玩家
 
-修改 monster_ai 系统，在路径小于 1.5 的，敌人会对玩家发动攻击。
-添加一个资源保存玩家的实体方便在 monster_ai 中寻找玩家的实体。该资源定义如下:
+在 src/map.rs 中新增一个资源 MapEntity 用来保存 map 的实体。代码如下:
 
 ```rust
-#[derive(Resource, Debug, Clone, Reflect, Deref)]
-pub struct PlayerEntity(Entity);
+#[derive(Resource, Deref)]
+pub struct MapEntity(Entity);
 ```
 
-在 src/logic.rs 的 setup_game 系统中创建 PlayerEntity 资源,代码如下:。
-
-```rust
-    let player = commands
-        .spawn_empty()
-        .insert((
-            Position {
-                x: first_room_centerr.0,
-                y: first_room_centerr.1,
-            },
-            Renderable {
-                glyph: '@',
-                fg: Color::YELLOW,
-                bg: Color::BLACK,
-            },
-            Player {},
-            Viewshed {
-                visible_tiles: vec![],
-                range: 8,
-                dirty: true,
-            },
-            Name::new("Player"),
-            CombatStats {
-                max_hp: 30,
-                hp: 30,
-                defense: 2,
-                power: 5,
-            },
-        ))
-        .id();
-
-    commands.insert_resource(PlayerEntity(player));
-```
-
+在 setup_game 系统插入资源。
 添加一个系统 clear_game，这个系统用于清除 setup_game 的组件和资源。代码如下:
 
 ```rust
-pub fn clear_game(
-    mut commands: Commands,
-    q_terminal: Query<Entity, With<Terminal>>,
-    q_position: Query<Entity, With<Position>>,
-) {
-    for entity in q_terminal.iter() {
-        commands.entity(entity).despawn_recursive();
-    }
-
-    for entity in q_position.iter() {
-        commands.entity(entity).despawn_recursive();
-    }
+pub fn clear_game(mut commands: Commands, map_entity: Res<MapEntity>) {
+    commands.entity(map_entity.0).despawn_recursive();
 
     commands.remove_resource::<PlayerEntity>();
+    commands.remove_resource::<PlayerPosition>();
+    commands.remove_resource::<MapEntity>();
 }
+
 ```
 
 在 src/logic.rs 的 LogicPlugin 新增系统，代码如下:
@@ -710,37 +657,33 @@ app.add_systems(OnExit(GameState::Playing), clear_game);
 ```
 
 OnExit(GameState::Playing)为游戏结束后执行的 stage。
+
+修改 monster_ai 系统，在路径小于 1.5 的，敌人会对玩家发动攻击。
+
 更改 src/logic.rs 中的 monster_ai 系统，代码如下:
 
 ```rust
-pub fn monster_ai(
+fn enemy_ai(
     mut commands: Commands,
-    mut set: ParamSet<(
-        Query<(&mut Position, &mut Viewshed, &Monster, &Name, Entity)>,
-        Query<&Position, With<Player>>,
-    )>,
-    mut map: ResMut<Map>,
+    mut q_enemy: Query<(&mut Viewshed, &mut Position, &Name, Entity), With<Enemy>>,
+    player_position: Res<PlayerPosition>,
     player_entity: Res<PlayerEntity>,
+    mut map: ResMut<Map>,
 ) {
-    let q_player = set.p1();
-    let player_pos = q_player.single().clone();
-
-    for (mut pos, mut viewshed, _, name, entity) in set.p0().iter_mut() {
-        //占位
-
+    for (mut viewshed, mut position, name, entity) in q_enemy.iter_mut() {
         if viewshed
             .visible_tiles
-            .contains(&Point::new(player_pos.x, player_pos.y))
+            .contains(&Point::new(player_position.0.x, player_position.0.y))
         {
             info!("{} shouts insults", name);
 
             let distance = DistanceAlg::Pythagoras.distance2d(
-                Point::new(pos.x, pos.y),
-                Point::new(player_pos.x, player_pos.y),
+                Point::new(position.x, position.y),
+                Point::new(player_position.0.x, player_position.0.y),
             );
 
             if distance < 1.5 {
-                let player = *player_entity.clone();
+                let player = player_entity.0.clone();
 
                 commands.entity(entity).with_children(|parent| {
                     parent.spawn(WantsToMelee { target: player });
@@ -750,15 +693,13 @@ pub fn monster_ai(
             }
 
             let path = a_star_search(
-                map.xy_idx(pos.x, pos.y) as i32,
-                map.xy_idx(player_pos.x, player_pos.y) as i32,
+                map.xy_idx(position.x, position.y) as i32,
+                map.xy_idx(player_position.0.x, player_position.0.y) as i32,
                 &mut *map,
             );
-            info!("path success: {}, setp: {}", path.success, path.steps.len());
-
             if path.success && path.steps.len() > 1 {
-                pos.x = path.steps[1] as i32 % (map.width as i32);
-                pos.y = path.steps[1] as i32 / (map.width as i32);
+                position.x = path.steps[1] as i32 % (map.width as i32);
+                position.y = path.steps[1] as i32 / (map.width as i32);
                 viewshed.dirty = true;
             }
         }
@@ -790,37 +731,6 @@ pub fn delete_the_dead(
 ```
 
 最后给 user_input, melee_combat, apply_damage, delete_the_dead 等系统添加一个 run_if，它们必须运行在 GameState 的 Playing 状态下。
-
-# 修复发现的问题
-
-当游戏结束时，状态进入 menu 会在此触发生成相机的操作，这样游戏中就有了多个相机。这是不期望看到的，因此修改 src/menu.rs 中 setup_menu 系统，将生成相机的移入 src/load.rs 中 LoadingPlugin 中，在 startup 这个 stage 就生成相机。代码如下:
-
-```rust
-pub fn setup(mut commands: Commands) {
-    commands.spawn(
-        TiledCameraBundle::new()
-            .with_pixels_per_tile([8, 8])
-            .with_tile_count([80, 45]),
-    );
-}
-```
-
-LoadingPlugin 的代码如下:
-
-```rust
-impl Plugin for LoadingPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_loading_state(
-            LoadingState::new(GameState::Loading)
-                .continue_to_state(GameState::Menu)
-                .load_collection::<AudioAssets>()
-                .load_collection::<TextureAssets>(),
-        );
-
-        app.add_systems(Startup, setup);
-    }
-}
-```
 
 # 致谢
 
