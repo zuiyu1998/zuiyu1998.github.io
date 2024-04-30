@@ -1,5 +1,5 @@
 +++
-title = "roguelike_chapter8 武平"
+title = "roguelike_chapter8 道具"
 date = 2024-04-28
 
 [taxonomies]
