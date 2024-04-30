@@ -80,7 +80,7 @@ pub fn player(commands: &mut Commands, theme_context: &mut ThemeContext, x: i32,
 
 修改 src/logic.rs 中的 setup_game 函数。
 
-在 src/spawner.rs 中添加 monster 函数 生成敌人。代码如下：
+在 src/spawner.rs 中添加 enemy 函数 生成敌人。代码如下：
 
 ```rust
 pub fn enemy(
