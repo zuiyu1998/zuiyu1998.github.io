@@ -6,26 +6,28 @@ date = 2024-01-24
 tags = ["bevy", "rust"]
 +++
 
-bevy是一个rust的开源游戏引擎，在社区备受关注。本篇文章立足bevy render库探究render渲染器的设计。
+bevy 是一个 rust 的开源游戏引擎，在社区备受关注。本篇文章立足 bevy render 库探究 render 渲染器的设计。
 
 <!-- more -->
 
-# 一句话总结bevy render库的功能
-渲染图工作器推动渲染图中的每个节点使用自己的绘制函数将cpu数据转化gpu数据，然后将gpu数据传输给gpu。
+# 一句话总结 bevy render 库的功能
+
+渲染图工作器推动渲染图中的每个节点使用自己的绘制函数将 cpu 数据转化 gpu 数据，然后将 gpu 数据传输给 gpu。
 这句话有两个重要的行为：
-- 每个节点使用自己的绘制函数将cpu数据转化gpu数据。
-- 把gpu数据传输给gpu。
+
+- 每个节点使用自己的绘制函数将 cpu 数据转化 gpu 数据。
+- 把 gpu 数据传输给 gpu。
 
 理解第一个行为可以自定义渲染内容。
 理解第二个行为可以自定义渲染后端。
 
-在大多数情况下我们只关心如何自定义渲染内容，所有我们会更多的介绍第一个行为。
+在大多数情况下我们只关心如何自定义渲染内容，所以我们会更多的介绍第一个行为。
 
 # 如何定义一个渲染图中的节点
 
-在bevy的源代码库中我们可以全局搜索 impl Node 这几个关键字，我们能够比较精确的看到已经实现的节点。从搜索的关键字我们就可以得到，node 是一个trait。当然通过trait实现抽象也在意料之中。trait的定义如下:
+在 bevy 的源代码库中我们可以全局搜索 impl Node 这几个关键字，我们能够比较精确的看到已经实现的节点。从搜索的关键字我们就可以得到，node 是一个 trait。当然通过 trait 实现抽象也在意料之中。trait 的定义如下:
 
-``` rust
+```rust
 pub trait Node: Downcast + Send + Sync + 'static {
     /// Specifies the required input slots for this node.
     /// They will then be available during the run method inside the [`RenderGraphContext`].
@@ -53,11 +55,14 @@ pub trait Node: Downcast + Send + Sync + 'static {
     ) -> Result<(), NodeRunError>;
 }
 ```
-node最为重要的函数为run函数，我们可以看到，它使用了二个可变的对象，RenderGraphContext和RenderContext。从名称也可以得知这个两个对象的作用，一个是渲染图上下文，一个是渲染上文。从这个函数定义可以看到，只要我们实现了这个trait，我们其实就可以自定义渲染内容，但是这个实现还太底层，我们需要明白gpu需要一系列的数据，才能更好的操作。直接使用这个还是一头雾水。所以需要从源码看一个实现，才能更好的理解。
-# bevy ui UiPassNode
-UiPassNode的定义如下:
 
-``` rust
+node 最为重要的函数为 run 函数，我们可以看到，它使用了二个可变的对象，RenderGraphContext 和 RenderContext。从名称也可以得知这个两个对象的作用，一个是渲染图上下文，一个是渲染上文。从这个函数定义可以看到，只要我们实现了这个 trait，我们其实就可以自定义渲染内容，但是这个实现还太抽象，我们需要明白 gpu 需要一系列的数据，才能更好的操作。直接使用这个还是一头雾水。所以需要从源码看一个实现，才能更好的理解。
+
+# bevy ui UiPassNode
+
+UiPassNode 的定义如下:
+
+```rust
 pub struct UiPassNode {
     ui_view_query: QueryState<
         (
@@ -70,8 +75,10 @@ pub struct UiPassNode {
     default_camera_view_query: QueryState<&'static DefaultCameraView>,
 }
 ```
-UiPass的node实现如下:
-``` rust
+
+UiPass 的 node 实现如下:
+
+```rust
 impl Node for UiPassNode {
     fn update(&mut self, world: &mut World) {
         self.ui_view_query.update_archetypes(world);
@@ -120,14 +127,17 @@ impl Node for UiPassNode {
     }
 }
 ```
+
 这里面最重要的逻辑就是下面这句：
+
 ```rust
 transparent_phase.render(&mut render_pass, world, view_entity);
 ```
 
-transparent_phase是一个泛型，由PhaseItem trait约束，在这里它实际的类型是RenderPhase<TransparentUi>。render_pass是TrackedRenderPass的实例，它用于设置管道，顶点等gpu需要的数据。
-一句话总结，node的具体实现依赖于实现了PhaseItem trait的泛型RenderPhase<TransparentUi>。这里我们需要探究RenderPhase和PhaseItem trait的作用。
-transparent_phase.render的实现如下:
+transparent_phase 是一个泛型，由 PhaseItem trait 约束，在这里它实际的类型是 RenderPhase<TransparentUi>。render_pass 是 TrackedRenderPass 的实例，它用于设置管道，顶点等 gpu 需要的数据。
+一句话总结，node 的具体实现依赖于实现了 PhaseItem trait 的泛型 RenderPhase<TransparentUi>。这里我们需要探究 RenderPhase 和 PhaseItem trait 的作用。
+transparent_phase.render 的实现如下:
+
 ```rust
 pub fn render<'w>(
     &self,
@@ -169,8 +179,10 @@ pub fn render_range<'w>(
 }
 
 ```
-transparent_phase 从DrawFunction中取出draw_functions,根据PhaseItem取出id，由id获取渲染函数，渲染函数负责具体的绘制。
-这里我们还不清楚是渲染函数怎么和PhaseItem联系起来。渲染函数同样是实现了draw trait的对象。bevy引入了一个另一个trait自动实现draw，并且通过这个trait将PhaseItem联系起来，这个trait就是RenderCommand<P: PhaseItem>。我们可以看下bevy ui render具体的实现。
+
+transparent_phase 从 DrawFunction 中取出 draw_functions,根据 PhaseItem 取出 id，由 id 获取渲染函数，渲染函数负责具体的绘制。
+这里我们还不清楚是渲染函数怎么和 PhaseItem 联系起来。渲染函数同样是实现了 draw trait 的对象。bevy 引入了一个另一个 trait 自动实现 draw，并且通过这个 trait 将 PhaseItem 联系起来，这个 trait 就是 RenderCommand<P: PhaseItem>。我们可以看下 bevy ui render 具体的实现。
+
 ```rust
 pub type DrawUi = (
     SetItemPipeline,
@@ -240,19 +252,24 @@ impl<P: PhaseItem> RenderCommand<P> for DrawUiNode {
 }
 
 ```
-这里的DrawUi就是实际的绘制函数实现。好，我们这里已经弄清楚node 的具体实现，这里我们总结一下这个流程。
-- node trait 靠实现了PhaseItem的RenderPhase<T>的驱动。
-- RenderPhase<T> 从DrawFunction<T>获得具体的渲染函数。
-- 渲染函数由RenderCommand<T>定义。
-- 每个RenderCommand负责向gpu发送数据。
 
-对应beve ui render就是
-- UiPassNode 靠RenderPhase<TransparentUi>驱动
-- RenderPhase<TransparentUi> 从DrawFunction<TransparentUi>获得具体的渲染函数
-- DrawUi为实际的渲染函数，
-- SetItemPipeline，SetUiViewBindGroup，SetUiTextureBindGroup，DrawUiNode负责向gpu发送数据
+这里的 DrawUi 就是实际的绘制函数实现。好，我们这里已经弄清楚 node 的具体实现，这里我们总结一下这个流程。
+
+- node trait 靠实现了 PhaseItem 的 RenderPhase<T>的驱动。
+- RenderPhase<T> 从 DrawFunction<T>获得具体的渲染函数。
+- 渲染函数由 RenderCommand<T>定义。
+- 每个 RenderCommand 负责向 gpu 发送数据。
+
+对应 beve ui render 就是
+
+- UiPassNode 靠 RenderPhase<TransparentUi>驱动
+- RenderPhase<TransparentUi> 从 DrawFunction<TransparentUi>获得具体的渲染函数
+- DrawUi 为实际的渲染函数，
+- SetItemPipeline，SetUiViewBindGroup，SetUiTextureBindGroup，DrawUiNode 负责向 gpu 发送数据
+
 # bevy ui plugin
-通过bevy ui plugin可以看下具体的实现。代码如下:
+
+通过 bevy ui plugin 可以看下具体的实现。代码如下:
 
 ```rust
 pub fn build_ui_render(app: &mut App) {
@@ -290,13 +307,18 @@ pub fn build_ui_render(app: &mut App) {
                 prepare_uinodes.in_set(RenderSet::PrepareBindGroups),
             ),
         );
-   
+
 }
 
 ```
-在ui plugin中可以看到手动添加了DrawFunctions资源和TransparentUi，DrawUi的rendercommand。
+
+在 ui plugin 中可以看到手动添加了 DrawFunctions 资源和 TransparentUi，DrawUi 的 rendercommand。
+
 # 简陋架构图
-![bevy ui render 架构图](./images/bevy_ui_render.jpg "bevy ui render 架构图")
-图中红线为我们实现自定义渲染需要自己实现的trait。
+
+![bevy ui render 架构图](./images/bevy_ui_render.jpg 'bevy ui render 架构图')
+图中红线为我们实现自定义渲染需要自己实现的 trait。
+
 # 结语
-该文章并未涉及从ecs中获取组件数据和渲染app的相关解释。
+
+该文章并未涉及从 ecs 中获取组件数据和渲染 app 的相关解释。
