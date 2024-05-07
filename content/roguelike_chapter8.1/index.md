@@ -299,6 +299,68 @@ fn enemy_ai(
 
 该系统现在只会在 enemy 实体有 follow 组件的时候执行。清除 RunTurnState 的相关代码，现在已经不需要 RunTurnState 执行敌人的 ai。
 
+# 修复 tooltip 的显示
+
+在 src/state.rs 为 AppStateManager 添加二个函数用来改变 GameState 的状态，一个用来显示 tooltip，一个恢复正常的游戏状态。代码如下：
+
+```rust
+    pub fn start_tootip(&mut self) {
+        self.game_next_state.set(GameState::ToolTip);
+    }
+
+    pub fn start_playing(&mut self) {
+        self.game_next_state.set(GameState::Playing);
+    }
+```
+
+更改 src/ui/tooltip/rs 中 update_tooltip 系统的调度，改为在 GameState::playing 中执行。
+
+新增一个系统用来恢复 GameState 的状态。代码如下:
+
+```rust
+fn change_to_playing(
+    keyboard_input: Res<ButtonInput<KeyCode>>,
+    mut app_state_manager: AppStateManager,
+) {
+    if keyboard_input.just_pressed(KeyCode::Escape) || keyboard_input.just_pressed(KeyCode::Space) {
+        app_state_manager.start_playing();
+    }
+}
+
+```
+
+将此系统放入 GameState::ToolTip 的调度中。代码如下:
+
+```rust
+impl Plugin for TooltipsPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_systems(OnEnter(AppState::InGame), (spawn_tooltip_ui,));
+        app.add_systems(
+            Update,
+            (update_tooltip,).run_if(in_state(GameState::Playing)),
+        );
+
+        app.add_systems(
+            Update,
+            (change_to_playing,).run_if(in_state(GameState::ToolTip)),
+        );
+
+        app.add_systems(OnExit(GameState::ToolTip), (hide_tooltip,));
+        app.add_systems(OnExit(AppState::InGame), (clear_tooltip_ui,));
+    }
+}
+```
+
+修改 src/player.rs 中的 player_input 的调度，改为 GameState::Playing，修复在 Tooltip 状态下玩家可以移动的问题。代码如下:
+
+```rust
+impl Plugin for PlayerPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_systems(Update, (player_input,).run_if(in_state(GameState::Playing)));
+    }
+}
+```
+
 # 致谢
 
 - [bevy](https://github.com/bevyengine/bevy),游戏引擎
