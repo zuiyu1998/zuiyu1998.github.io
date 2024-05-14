@@ -1,5 +1,5 @@
 +++
-title = "roguelike_chapter8 有限状态机"
+title = "roguelike_chapter8.1 有限状态机"
 date = 2024-04-28
 
 [taxonomies]
