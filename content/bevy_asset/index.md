@@ -257,3 +257,6 @@ pub trait AssetLoader: Send + Sync + 'static {
 ```
 
 AssetLoader 负责加载器的具体实现，从文件系统中读取内容，并转化成 asset 对象，ErasedAssetLoader，负责保存加载器的指针，同时擦除 Asset 的类型信息。ErasedLoadedAsset 保存了资源信息。
+load_internal 函数中 load_with_meta_loader_and_reader 负责实际加载数据，loaded_asset 就是擦除类型之后的资源。send_loaded_asset 方法将加载后资源交给其他系统进行处理，
+
+handle_internal_asset_events 用于加载后的数据处理。
