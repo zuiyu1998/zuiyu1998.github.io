@@ -104,7 +104,7 @@ where
 }
 ```
 
-注意 RenderGraph 的 run_graph 方法。这是整个渲染器的主要逻辑。这个函数将会一步步按照依赖关系展平节点，并且通过节点的 run 方法去渲染。
+注意 RenderGraph 的 run_graph 方法。这是整个渲染器的主要逻辑。这个函数将会一步步按照依赖关系展平节点，并且通过节点的 run 方法去渲染。这是 render graph 中的 Execute 阶段。
 
 ViewNode trait,这是 node trait 的特化 trait，ViewNodeRunner 使用 ViewNode trait。
 
