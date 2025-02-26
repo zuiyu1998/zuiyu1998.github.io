@@ -131,6 +131,5 @@ repos:
 注意使用之前需要安装对应的环境:
 
 ```nu
-pip install gdformat
-pip install gdlint
+pip3 install git+https://github.com/Scony/godot-gdscript-toolkit.git
 ```
