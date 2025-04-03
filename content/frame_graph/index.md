@@ -3,92 +3,32 @@ title = "基于frame-graph的渲染器设计思路"
 date = 2025-03-17
 
 [taxonomies]
-tags = ["frame_graph", "renderer",]
+tags = ["frame_graph", "renderer", "bevy"]
 +++
 
-这是探究渲染器实现的一系列文章。本篇文章探究 frame-graph 的设计。
+这是探究使用 frame graph 实现渲染器的一系列文章。本篇文章探究 frame-graph 的设计和一系列问题。
 
 <!-- more -->
 
 # frame-graph
 
-frame-graph 是一个典型的图结构。它分为两大类，一个是渲染节点，一个是资源节点。
-渲染节点、资源节点、资源定义如下:
+frame graph 是一个典型的图数据结构。它由两类节点构成，渲染节点和资源节点。构建 frame graph 就是构建渲染节点和资源节点的关系图。
 
-```rust
-pub struct PassNode {
-}
+在每帧渲染的时候一共有三个阶段。
 
-pub struct ResourceNode {
-}
+- Setup
+  负责构建渲染节点和和资源节点的关系图
+- Compile
+  优化各个渲染节点的关系，并且填充渲染节点的资源依赖
+- Execute
+  申请 gpu 资源并且执行渲染
 
-pub struct Resource {
-}
+面临的问题：
 
-pub trait FGResource: 'static + Debug;
+- 填入资源的数据在什么时候获取？比如顶点数据和索引数据，图片的字节数据。
+  这些 gpu 资源的创建和销毁都大于 frame graph 的生命周期。
 
-```
+  也就是在 Setup 阶段，除了声明用到的资源，还要从外部导入已创建完成的资源。
 
-渲染节点使用资源节点指向的资源构建 RenderPass。
-RenderPass 是一个薄的抽象层，通过定义 RenderPassTrait 可以以支持更多的渲染器后端。代码如下:
-
-```rust
-pub trait RenderPassTrait: 'static + Debug + Sync + Send + Any {
-    fn draw(&mut self, vertices: Range<u32>, instances: Range<u32>);
-
-    fn set_render_pipeline(&mut self, render_pipeline: &RenderPipeline);
-}
-
-pub struct RenderPass(Box<dyn RenderPassTrait>);
-
-```
-
-渲染节点使用的资源需要存储在一个数据结构中，定义一个结构体存储需要的资源。它主要提供的功能如下:
-
-- 通过资源节点的索引获取资源的引用，读索引获取&引用，写索引获取&mut 引用。
-
-定义如下:
-
-```rust
-
-pub type DynRenderFn = dyn FnOnce(&mut RenderPass, &mut RenderContext) -> Result<(), RendererError>;
-
-
-///各类资源的上下文，用于存储资源
-pub struct RenderContext {
-}
-
-impl RenderContext {
-    pub fn get_resource_mut<ResourceType: FGResource>(
-        &mut self,
-        handle: &ResourceRef<ResourceType, GpuWrite>,
-    ) -> Option<&mut ResourceType>;
-
-   pub fn get_resource_mut<ResourceType: FGResource>(
-        &self,
-        handle: &ResourceRef<ResourceType, GpuRead>,
-    ) -> Option<&ResourceType>;
-}
-
-///资源节点的索引, ViewType决定获取对应的引用
-pub struct ResourceRef<ResourceType, ViewType> {
-    handle: ResourceNodeHandle<ResourceType>,
-    _marker: PhantomData<ViewType>,
-}
-
-pub trait GpuViewType {
-    const IS_WRITABLE: bool;
-}
-
-pub struct GpuRead;
-
-impl GpuViewType for GpuRead {
-    const IS_WRITABLE: bool = false;
-}
-
-pub struct GpuWrite;
-
-impl GpuViewType for GpuWrite {
-    const IS_WRITABLE: bool = true;
-}
-```
+- Execute 如何运作？
+  在渲染节点运行的时候，所有的资源都会替换为索引，然后有一个资源表可以根据索引查找到实际的资源
