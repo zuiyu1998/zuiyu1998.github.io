@@ -31,7 +31,7 @@ pre-commit 使用这个文件来使用各种钩子。
 
 > .pre-commit-config.yaml 在项目的目录下
 
-# rust 的 pre-commit-config.yaml 配置文件
+# rust 的 .pre-commit-config.yaml 配置文件
 
 一般情况下 rust 项目使用的 pre-commit-config 配置。
 
@@ -86,7 +86,7 @@ repos:
       - id: cargo-test
         name: cargo test
         description: unit test for the project
-        entry: nu -c 'cargo nextest run --all-features'
+        entry: nu -c 'cargo test run --all-features'
         language: rust
         files: \.rs$
         pass_filenames: false
@@ -100,9 +100,9 @@ cargo install cargo-clippy
 cargo install cargo-nextest
 ```
 
-# godot 的 pre-commit-config.yaml 配置文件
+# godot 的 .pre-commit-config.yaml 配置文件
 
-一般情况下 godot 项目使用的 pre-commit-config 配置。
+一般情况下 godot 项目使用的 .pre-commit-config 配置。
 
 ```yaml
 fail_fast: false
