@@ -14,7 +14,7 @@ tags = ["bevy", "renderer", "frame-graph"]
 
 ## Summary
 
-通过对现行的 RenderGraph 进行拆分实现基于 frame graph 的渲染设计。
+基于 frame graph 的渲染设计。
 
 ## Motivation
 
@@ -25,11 +25,127 @@ tags = ["bevy", "renderer", "frame-graph"]
 
 ## User-facing explanation
 
-RenderGraph 通过 Node trait 实现渲染功能。在新的设计中将 Node trait 的功能分为 Setup trait and Pass trait。Setup trait 用于构建 FrameGraph, PassData trait 用于保存 Setup 中的各种的资源索引， 同时用这些索引实现渲染功能。
+frame graph 是一个有向无环图。它由渲染节点和资源节点构成。渲染节点描述了如何将资源绘制到 gpu 上。资源节点描述了如何使用资源。
+frame graph 将一帧的渲染分为三个阶段: Setup,Compile,Execute。在 Setup 阶段，用户可以自由的构建 frame graph。在 Compile 阶段，frame graph 会确认每一个资源的生命周期。在 Execute 阶段，frame graph 会将资源和 gpu 资源一一对应，并执行渲染节点描述的渲染。
+
+### 资源
+
+frame graph 最重要的功能是自动管理资源的创建、使用和销毁。这里的资源并不是 gpu 资源。而是 frame graph 自定义的资源。资源通常情况下不对应实际的 gpu 资源，只有处于 frame graph 的 Execute 阶段，才会和 gpu 资源一一对应，因此资源通常情况下有两个状态: 资源描述符和 资源实例。在 rust 中定义如下：
 
 ```rust
+use std::{borrow::Cow, sync::Arc};
+
+use crate::renderer::RenderDevice;
+
+pub trait FrameGraphResourceCreator {
+    fn create_texture(&self, desc: &TextureInfo) -> FrameGraphTexture;
+
+    fn create_buffer(&self, desc: &BufferInfo) -> FrameGraphBuffer;
+
+    fn create_resource(&self, desc: &AnyFrameGraphResourceDescriptor) -> AnyFrameGraphResource {
+        match desc {
+            AnyFrameGraphResourceDescriptor::Texture(info) => {
+                let texture = self.create_texture(info);
+                AnyFrameGraphResource::OwnedTexture(texture)
+            }
+            AnyFrameGraphResourceDescriptor::Buffer(info) => {
+                let buffer = self.create_buffer(info);
+                AnyFrameGraphResource::OwnedBuffer(buffer)
+            }
+        }
+    }
+}
+
+impl FrameGraphResourceCreator for RenderDevice {
+    fn create_texture(&self, desc: &TextureInfo) -> FrameGraphTexture {
+        let resource = self.wgpu_device().create_texture(&desc.get_texture_desc());
+        FrameGraphTexture {
+            resource,
+            desc: desc.clone(),
+        }
+    }
+
+    fn create_buffer(&self, desc: &BufferInfo) -> FrameGraphBuffer {
+        let resource = self.wgpu_device().create_buffer(&desc.get_buffer_desc());
+
+        FrameGraphBuffer {
+            resource,
+            desc: desc.clone(),
+        }
+    }
+}
+
+pub enum AnyFrameGraphResource {
+    OwnedBuffer(FrameGraphBuffer),
+    ImportedBuffer(Arc<FrameGraphBuffer>),
+    OwnedTexture(FrameGraphTexture),
+    ImportedTexture(Arc<FrameGraphTexture>),
+}
+
+pub struct FrameGraphBuffer {
+    pub resource: wgpu::Buffer,
+    pub desc: BufferInfo,
+}
+
+#[derive(Clone, Hash, PartialEq, Eq)]
+pub struct BufferInfo {
+    pub label: Option<Cow<'static, str>>,
+    pub size: wgpu::BufferAddress,
+    pub usage: wgpu::BufferUsages,
+    pub mapped_at_creation: bool,
+}
+
+impl BufferInfo {
+    pub fn get_buffer_desc(&self) -> wgpu::BufferDescriptor {
+        wgpu::BufferDescriptor {
+            label: self.label.as_deref(),
+            size: self.size,
+            usage: self.usage,
+            mapped_at_creation: self.mapped_at_creation,
+        }
+    }
+}
+
+pub struct FrameGraphTexture {
+    pub resource: wgpu::Texture,
+    pub desc: TextureInfo,
+}
+
+#[derive(Clone, Hash, PartialEq, Eq)]
+pub struct TextureInfo {
+    pub label: Option<Cow<'static, str>>,
+    pub size: wgpu::Extent3d,
+    pub mip_level_count: u32,
+    pub sample_count: u32,
+    pub dimension: wgpu::TextureDimension,
+    pub format: wgpu::TextureFormat,
+    pub usage: wgpu::TextureUsages,
+    pub view_formats: Vec<wgpu::TextureFormat>,
+}
+
+impl TextureInfo {
+    pub fn get_texture_desc(&self) -> wgpu::TextureDescriptor {
+        wgpu::TextureDescriptor {
+            label: self.label.as_deref(),
+            size: self.size,
+            mip_level_count: self.mip_level_count,
+            sample_count: self.sample_count,
+            dimension: self.dimension,
+            format: self.format,
+            usage: self.usage,
+            view_formats: &self.view_formats,
+        }
+    }
+}
+
+pub enum AnyFrameGraphResourceDescriptor {
+    Texture(TextureInfo),
+    Buffer(BufferInfo),
+}
 
 ```
+
+这里定义了两种资源: buffer、texture。如果需要可以轻松的扩展 AnyFrameGraphResourceDescriptor，AnyFrameGraphResource
 
 ## Implementation strategy
 
