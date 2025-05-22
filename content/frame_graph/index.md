@@ -1,9 +1,9 @@
 +++
 title = "基于frame-graph的渲染器设计思路"
-date = 2025-03-17
+date = 2025-05-19
 
 [taxonomies]
-tags = ["frame_graph", "renderer", "bevy"]
+tags = ["frame_graph", "renderer"]
 +++
 
 这是探究使用 frame graph 实现渲染器的一系列文章。本篇文章探究 frame-graph 的设计和一系列问题。
@@ -12,33 +12,20 @@ tags = ["frame_graph", "renderer", "bevy"]
 
 # frame-graph
 
-frame graph 是一个典型的图数据结构。它由两类节点构成，渲染节点和资源节点。
-资源节点保存了当前资源的状态。
-渲染节点保存了对资源的索引信息，并且在 Execute 阶段获取实际的资源进行渲染。
+frame graph 是一个有向无环图。它由两类节点构成，渲染节点和资源节点。
+渲染节点负责使用实际的 gpu 资源进行渲染。
+资源节点是实际 gpu 资源的占位。
 
-frame graph 共有三个阶段。
+frame graph 对渲染分为三个阶段：
 
-- Setup
-  负责创建渲染节点和和资源节点的关系图
-- Compile
-  优化各个渲染节点的关系，并且填充渲染节点的资源依赖
-- Execute
-  申请 gpu 资源并且执行渲染
-
-需要解决的问题：
-
-- 填入资源的数据在什么时候获取？比如顶点数据和索引数据，图片的字节数据。
-  这些 gpu 资源的创建和销毁都大于 frame graph 的生命周期。
-
-  也就是在 Setup 阶段，除了声明用到的资源，还要从外部导入已创建完成的资源。
-
-- Execute 如何运作？
-  在渲染节点运行的时候，所有的资源都会替换为索引，然后有一个资源表可以根据索引查找到实际的资源
+- Setup， 该阶段构建 frame graph。
+- Compile, 该阶段计算渲染节点使用资源的生命周期
+- Execute，该阶段实现进行渲染
 
 # Transient Resources
 
-由 Frame Graph 管理的资源。通常是 buffer 和 texture
+由 Frame Graph 管理的资源。一个 Transient Resource 描述了对应 gpu 资源 的使用和创造。通常情况下是 Buffer 和 Texture
 
-# Pass
+# PassNode
 
-用于实际渲染的对象。
+渲染节点最重要的功能是对 gpu 的资源使用。在一般的实现中，这里都是借助闭包捕获对应的索引。但是更好的设计是手动收集这些索引。
