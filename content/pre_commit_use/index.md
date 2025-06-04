@@ -1,6 +1,6 @@
 +++
 title = "pre-commit 的使用"
-date = 2025-02-24
+date = 2025-05-24
 
 [taxonomies]
 tags = ["pre-commit", "教程", "godot", "rust"]
@@ -118,6 +118,7 @@ repos:
         language: python
         language_version: python3
         require_serial: true
+        additional_dependencies: [setuptools]
         types: [gdscript]
       - id: gdformat
         name: gdformat
@@ -126,6 +127,7 @@ repos:
         language: python
         language_version: python3
         require_serial: true
+        additional_dependencies: [setuptools]
         types: [gdscript]
 ```
 注意使用之前需要安装对应的环境:
