@@ -3,7 +3,7 @@ title = "opemim-msg-transfer"
 date = 2025-04-09
 
 [taxonomies]
-tags = ["openim", "redis"，"mongo"]
+tags = ["openim", "redis", "mongo"]
 +++
 
 这是 openim 源码解析系列的一篇文章。
