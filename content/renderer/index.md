@@ -1,6 +1,6 @@
 +++
 title = "从零开始渲染器"
-date = 2025-07-09
+date = 2025-07-30
 
 [taxonomies]
 tags = ["renderer", "rust", "wgpu"]
@@ -17,3 +17,4 @@ tags = ["renderer", "rust", "wgpu"]
 # 任务清单
 
 - 实现 frame graph 的设计。
+  - Pass 的设计
