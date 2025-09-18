@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="en">
+    <title> - 教程</title>
+    <link rel="self" type="application/atom+xml" href="https://zuiyu1998.github.io/tags/jiao-cheng/atom.xml"/>
+    <link rel="alternate" type="text/html" href="https://zuiyu1998.github.io/"/>
+    <generator uri="https://www.getzola.org/">Zola</generator>
+    <updated>2025-05-24T00:00:00+00:00</updated>
+    <id>https://zuiyu1998.github.io/tags/jiao-cheng/atom.xml</id>
+    <entry xml:lang="en">
+        <title>pre-commit 的使用</title>
+        <published>2025-05-24T00:00:00+00:00</published>
+        <updated>2025-05-24T00:00:00+00:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://zuiyu1998.github.io/pre-commit-use/"/>
+        <id>https://zuiyu1998.github.io/pre-commit-use/</id>
+        
+        <summary type="html">&lt;p&gt;pre-commit 是一个使用 git hook 来实现代码规范的工具。通过这个工具可以使代码结构更规整，更有可读性。&lt;&#x2F;p&gt;</summary>
+        
+    </entry>
+</feed>

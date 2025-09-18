@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+      <meta http-equiv="X-UA-Compatible" content="IE=edge">
+      <meta http-equiv="content-type" content="text/html; charset=utf-8">
+
+      <!-- Enable responsiveness on mobile devices-->
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    
+      
+    
+
+      <title> - 从零开始draft渲染器设计-00</title>
+
+      
+
+      
+          <script src="https://cdnjs.cloudflare.com/ajax/libs/slideout/1.0.1/slideout.min.js"></script>
+          
+      
+
+      
+          <link rel="stylesheet" href="https://zuiyu1998.github.io/site.css">
+          
+      
+
+      
+      
+    </head>
+
+    <body>
+        <div class="container">
+
+            <div id="mobile-navbar" class="mobile-navbar">
+              <div class="mobile-header-logo">
+                <a href="https:&#x2F;&#x2F;zuiyu1998.github.io&#x2F;" class="logo">zuiyu&#x27;s blog</a>
+              </div>
+              <div class="mobile-navbar-icon icon-out">
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+            </div>
+
+            <nav id="mobile-menu" class="mobile-menu slideout-menu slideout-menu-left">
+              <ul class="mobile-menu-list">
+                
+                    <li class="mobile-menu-item">
+                        <a href="https:&#x2F;&#x2F;zuiyu1998.github.io&#x2F;">
+                            首页
+                        </a>
+                    </li>
+                
+                    <li class="mobile-menu-item">
+                        <a href="https:&#x2F;&#x2F;zuiyu1998.github.io&#x2F;&#x2F;tags">
+                            标签
+                        </a>
+                    </li>
+                
+              </ul>
+            </nav>
+
+            <header id="header">
+                <div class="logo"><a href="https:&#x2F;&#x2F;zuiyu1998.github.io&#x2F;">zuiyu&#x27;s blog</a></div>
+                <nav class="menu">
+                    <ul>
+                        
+                            <li>
+                                <a href="https:&#x2F;&#x2F;zuiyu1998.github.io&#x2F;">
+                                    首页
+                                </a>
+                            </li>
+                        
+                            <li>
+                                <a href="https:&#x2F;&#x2F;zuiyu1998.github.io&#x2F;&#x2F;tags">
+                                    标签
+                                </a>
+                            </li>
+                        
+                    </ul>
+                </nav>
+            </header>
+
+            <main>
+                <div class="content" id="mobile-panel">
+                    
+
+
+<div class="post-toc" id="post-toc">
+    <h2 class="post-toc-title">Contents</h2>
+    <div class="post-toc-content always-active">
+        <nav id="TableOfContents">
+            <ul>
+                
+                <li>
+                    <a href="https://zuiyu1998.github.io/draft-renderer/#zong-shu" class="toc-link">总述</a>
+                    
+                </li>
+                
+                <li>
+                    <a href="https://zuiyu1998.github.io/draft-renderer/#webgpu-de-san-jiao-xing-xuan-ran-liu-cheng" class="toc-link">webgpu 的三角形渲染流程</a>
+                    
+                </li>
+                
+                <li>
+                    <a href="https://zuiyu1998.github.io/draft-renderer/#chang-jian-gai-nian" class="toc-link">常见概念</a>
+                    
+                </li>
+                
+                <li>
+                    <a href="https://zuiyu1998.github.io/draft-renderer/#liu-cheng" class="toc-link">流程</a>
+                    
+                </li>
+                
+                <li>
+                    <a href="https://zuiyu1998.github.io/draft-renderer/#wen-ti" class="toc-link">问题</a>
+                    
+                </li>
+                
+            </ul>
+        </nav>
+    </div>
+</div>
+
+
+<article class="post">
+    
+    <header class="post__header">
+        <h1 class="post__title">
+            <a href="https:&#x2F;&#x2F;zuiyu1998.github.io&#x2F;draft-renderer&#x2F;">从零开始draft渲染器设计-00</a>
+        </h1>
+        <div class="post__meta">
+            <span class="post__time">2025-09-10</span>
+            
+        </div>
+    </header>
+
+    <div class="post-content">
+      <p>这是设计 draft renderer 渲染器的一系列文章。</p>
+<span id="continue-reading"></span>
+<h1 id="zong-shu">总述</h1>
+<p>draft renderer 是一个基于 webgpu 的渲染器。</p>
+<h1 id="webgpu-de-san-jiao-xing-xuan-ran-liu-cheng">webgpu 的三角形渲染流程</h1>
+<ol>
+<li>申请 gpu 的资源，并且通过申请到的资源从 cpu 端向 gpu 填充数据</li>
+<li>申请 gpu 的绑定组布局和管线</li>
+<li>根据绑定组布局和资源生成绑定组</li>
+<li>获取 encoder 等资源，生成 commmand buffer</li>
+</ol>
+<h1 id="chang-jian-gai-nian">常见概念</h1>
+<ul>
+<li>材质
+用于管线的生成
+用于填充对应的资源</li>
+</ul>
+<h1 id="liu-cheng">流程</h1>
+<ol>
+<li>获取可以向 gpu 渲染的所有 cpu 对象</li>
+<li>申请 cpu 对象对应的全局 gpu 资源</li>
+<li>获取 cpu 对象的局部 gpu 资源</li>
+</ol>
+<h1 id="wen-ti">问题</h1>
+<p>draft 渲染器是如何处理上述步骤的？</p>
+<p>如何处理同一类材质，如何处理同一材质？以及扩展。</p>
+<p>如何判定局部的 uniform 生成？
+在渲染同一类型的时候，相同名称的资源应该指向同一个 uniform，避免申请多个。</p>
+
+    </div>
+
+    
+    
+
+    <div class="post-footer">
+        
+            
+                <div class="post-tags">
+                    
+                        <a href="https://zuiyu1998.github.io/tags/draft/">#draft</a>
+                    
+                        <a href="https://zuiyu1998.github.io/tags/renderer/">#renderer</a>
+                    
+                </div>
+            
+            
+                <div class="post-nav">
+                    
+                        <a class="previous" href="https:&#x2F;&#x2F;zuiyu1998.github.io&#x2F;bevy-renderer&#x2F;">‹ 从零开始bevy渲染器设计-01</a>
+                    
+                    
+                        <a class="next" href="https:&#x2F;&#x2F;zuiyu1998.github.io&#x2F;turn-based-chess-002&#x2F;">回合制战棋demo02-数值发生器 ›</a>
+                    
+                </div>
+            
+
+        
+
+    </div>
+
+    
+    
+</article>
+
+
+                </div>
+            </main>
+
+            
+            
+        </div>
+
+      
+          <script type="text/javascript" src="https://zuiyu1998.github.io/even.js" ></script>
+      
+    </body>
+
+</html>
