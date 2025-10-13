@@ -1,5 +1,5 @@
 +++
-title = "从零开始bevy渲染器设计-01"
+title = "从零开始bevy渲染器设计-00"
 date = 2025-09-10
 
 [taxonomies]
@@ -10,31 +10,14 @@ tags = ["bevy", "renderer"]
 
 <!-- more -->
 
-# 总述
+# 常见的概念
 
-bevy renderer 是一个基于 webgpu、适配 ecs 的渲染器设计。
-
-# webgpu 的三角形渲染流程
-
-1. 收集 cpu 中所有要使用的资源
-2. 申请 gpu 的资源，从 cpu 端向 cpu 填充数据
-3. 申请 gpu 的绑定组布局和管线
-4. 根据绑定组布局和资源生成绑定组
-5. 获取 encoder，生成 commmand buffer
-
-# 顶层概念
-
+- 窗口
+- 摄像机
+- 材质
+- 纹理
 - 网格
-  - 几何
-  - 材质
-- 精灵
-- 摄像头
 
-# 底层
+# 常见问题
 
-- buffer
-- texture
-
-# 问题
-
-bevy 渲染器是如何处理上述步骤的？
+这些概念是如何被抽象的，同时这些对象是如何创建的。
