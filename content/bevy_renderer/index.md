@@ -1,6 +1,6 @@
 +++
 title = "从零开始bevy渲染器设计-00"
-date = 2025-09-10
+date = 2025-10-13
 
 [taxonomies]
 tags = ["bevy", "renderer"]
