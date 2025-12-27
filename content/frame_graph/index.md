@@ -22,13 +22,15 @@ frame graph 对一帧的渲染分为三个阶段：
 - Compile, 该阶段计算渲染节点使用资源的生命周期
 - Execute，该阶段获取 gpu 资源，并进行渲染
 
-# Transient Resources
+# Transient Resource
 
-由 Frame Graph 管理的资源。一个 Transient Resource 描述了对应 gpu 资源。通常情况下是 Buffer 和 Texture
+实际资源的占位。通常情况下指的是 Buffer 和 Texture。Transient Resource 分为两部分，一个是在 frame_graph 外管理的资源，一部分是 frame_graph 管理的资源。前者是资源的实例，后者是资源的描述。
 
 # PassNode
 
-渲染节点保存了将要使用资源的索引，这些索引指向了实际的 gpu 资源。
+渲染节点描述了当前节点利用资源进行渲染的过程。
 
-- pipeline 和 layout
-- 数据和 bind group
+1. 如何获取要使用的资源
+2. 使用资源进行渲染的过程。
+
+使用命令模式实现资源进行渲染的过程。
