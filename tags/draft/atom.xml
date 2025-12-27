@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="en">
+    <title> - draft</title>
+    <link rel="self" type="application/atom+xml" href="https://zuiyu1998.github.io/tags/draft/atom.xml"/>
+    <link rel="alternate" type="text/html" href="https://zuiyu1998.github.io/"/>
+    <generator uri="https://www.getzola.org/">Zola</generator>
+    <updated>2025-09-10T00:00:00+00:00</updated>
+    <id>https://zuiyu1998.github.io/tags/draft/atom.xml</id>
+    <entry xml:lang="en">
+        <title>从零开始draft渲染器设计-00</title>
+        <published>2025-09-10T00:00:00+00:00</published>
+        <updated>2025-09-10T00:00:00+00:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://zuiyu1998.github.io/draft-renderer/"/>
+        <id>https://zuiyu1998.github.io/draft-renderer/</id>
+        
+        <summary type="html">&lt;p&gt;这是设计 draft renderer 渲染器的一系列文章。&lt;&#x2F;p&gt;</summary>
+        
+    </entry>
+</feed>

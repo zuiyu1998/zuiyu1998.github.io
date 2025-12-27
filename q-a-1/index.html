@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+      <meta http-equiv="X-UA-Compatible" content="IE=edge">
+      <meta http-equiv="content-type" content="text/html; charset=utf-8">
+
+      <!-- Enable responsiveness on mobile devices-->
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    
+      
+    
+
+      <title> - 在多线程中有高计算场景中如何持有锁</title>
+
+      
+
+      
+          <script src="https://cdnjs.cloudflare.com/ajax/libs/slideout/1.0.1/slideout.min.js"></script>
+          
+      
+
+      
+          <link rel="stylesheet" href="https://zuiyu1998.github.io/site.css">
+          
+      
+
+      
+      
+    </head>
+
+    <body>
+        <div class="container">
+
+            <div id="mobile-navbar" class="mobile-navbar">
+              <div class="mobile-header-logo">
+                <a href="https:&#x2F;&#x2F;zuiyu1998.github.io&#x2F;" class="logo">zuiyu&#x27;s blog</a>
+              </div>
+              <div class="mobile-navbar-icon icon-out">
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+            </div>
+
+            <nav id="mobile-menu" class="mobile-menu slideout-menu slideout-menu-left">
+              <ul class="mobile-menu-list">
+                
+                    <li class="mobile-menu-item">
+                        <a href="https:&#x2F;&#x2F;zuiyu1998.github.io&#x2F;">
+                            首页
+                        </a>
+                    </li>
+                
+                    <li class="mobile-menu-item">
+                        <a href="https:&#x2F;&#x2F;zuiyu1998.github.io&#x2F;&#x2F;tags">
+                            标签
+                        </a>
+                    </li>
+                
+              </ul>
+            </nav>
+
+            <header id="header">
+                <div class="logo"><a href="https:&#x2F;&#x2F;zuiyu1998.github.io&#x2F;">zuiyu&#x27;s blog</a></div>
+                <nav class="menu">
+                    <ul>
+                        
+                            <li>
+                                <a href="https:&#x2F;&#x2F;zuiyu1998.github.io&#x2F;">
+                                    首页
+                                </a>
+                            </li>
+                        
+                            <li>
+                                <a href="https:&#x2F;&#x2F;zuiyu1998.github.io&#x2F;&#x2F;tags">
+                                    标签
+                                </a>
+                            </li>
+                        
+                    </ul>
+                </nav>
+            </header>
+
+            <main>
+                <div class="content" id="mobile-panel">
+                    
+
+
+<div class="post-toc" id="post-toc">
+    <h2 class="post-toc-title">Contents</h2>
+    <div class="post-toc-content always-active">
+        <nav id="TableOfContents">
+            <ul>
+                
+                <li>
+                    <a href="https://zuiyu1998.github.io/q-a-1/#fang-an" class="toc-link">方案</a>
+                    
+                </li>
+                
+            </ul>
+        </nav>
+    </div>
+</div>
+
+
+<article class="post">
+    
+    <header class="post__header">
+        <h1 class="post__title">
+            <a href="https:&#x2F;&#x2F;zuiyu1998.github.io&#x2F;q-a-1&#x2F;">在多线程中有高计算场景中如何持有锁</a>
+        </h1>
+        <div class="post__meta">
+            <span class="post__time">2025-02-24</span>
+            
+        </div>
+    </header>
+
+    <div class="post-content">
+      <p>场景：</p>
+<ul>
+<li>多线程使用</li>
+<li>有一个或多个线程有高计算使用</li>
+</ul>
+<p>在这种情况下如何使用锁？</p>
+<span id="continue-reading"></span>
+<h1 id="fang-an">方案</h1>
+<p>通常情况下分两种情况:</p>
+<ol>
+<li>在高计算场景下多次获取锁</li>
+<li>在高计算场景下整体获取锁</li>
+</ol>
+<p>情况 1 符合一般的锁的使用场景，缩小临界区。避免死锁。那情况 2 可使用吗？</p>
+<p>如果是整体使用锁，且这个锁在线程内只使用一次没问题。需要注意的是在单线程内对同一个锁进行多次申请。
+测试代码如下:</p>
+<pre data-lang="rust" style="background-color:#2b303b;color:#c0c5ce;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="color:#b48ead;">use </span><span>std::{
+</span><span>    sync::{Arc, Mutex},
+</span><span>    thread::{</span><span style="color:#bf616a;">self</span><span>, sleep},
+</span><span>    time::Duration,
+</span><span>};
+</span><span>
+</span><span>#[</span><span style="color:#bf616a;">derive</span><span>(Debug, Default, Clone)]
+</span><span style="color:#b48ead;">pub struct </span><span>State {
+</span><span>    </span><span style="color:#bf616a;">count</span><span>: Arc&lt;Mutex&lt;</span><span style="color:#b48ead;">usize</span><span>&gt;&gt;,
+</span><span>}
+</span><span>
+</span><span style="color:#b48ead;">impl </span><span>State {
+</span><span>    </span><span style="color:#b48ead;">pub fn </span><span style="color:#8fa1b3;">computed</span><span>(&amp;</span><span style="color:#bf616a;">self</span><span>) {
+</span><span>        println!(&quot;</span><span style="color:#a3be8c;">computed</span><span>&quot;);
+</span><span>        </span><span style="color:#b48ead;">let mut</span><span> count = </span><span style="color:#bf616a;">self</span><span>.count.</span><span style="color:#96b5b4;">lock</span><span>().</span><span style="color:#96b5b4;">unwrap</span><span>();
+</span><span>
+</span><span>        </span><span style="color:#96b5b4;">sleep</span><span>(Duration::from_secs(</span><span style="color:#d08770;">2</span><span>));
+</span><span>
+</span><span>        *count += </span><span style="color:#d08770;">1</span><span>;
+</span><span>    }
+</span><span>
+</span><span>    </span><span style="color:#b48ead;">pub fn </span><span style="color:#8fa1b3;">print</span><span>(&amp;</span><span style="color:#bf616a;">self</span><span>) {
+</span><span>        </span><span style="color:#b48ead;">let mut</span><span> count = </span><span style="color:#bf616a;">self</span><span>.count.</span><span style="color:#96b5b4;">lock</span><span>().</span><span style="color:#96b5b4;">unwrap</span><span>();
+</span><span>        *count += </span><span style="color:#d08770;">1</span><span>;
+</span><span>
+</span><span>        println!(&quot;</span><span style="color:#d08770;">{}</span><span>&quot;, count);
+</span><span>    }
+</span><span>}
+</span><span>
+</span><span style="color:#b48ead;">fn </span><span style="color:#8fa1b3;">main</span><span>() {
+</span><span>    </span><span style="color:#b48ead;">let</span><span> state = State::default();
+</span><span>
+</span><span>    </span><span style="color:#b48ead;">let</span><span> state_clone = state.</span><span style="color:#96b5b4;">clone</span><span>();
+</span><span>    thread::spawn(</span><span style="color:#b48ead;">move </span><span>|| {
+</span><span>        state_clone.</span><span style="color:#96b5b4;">computed</span><span>();
+</span><span>    });
+</span><span>
+</span><span>
+</span><span>    </span><span style="color:#b48ead;">let</span><span> state_clone = state.</span><span style="color:#96b5b4;">clone</span><span>();
+</span><span>    thread::spawn(</span><span style="color:#b48ead;">move </span><span>|| {
+</span><span>        state_clone.</span><span style="color:#96b5b4;">computed</span><span>();
+</span><span>    });
+</span><span>
+</span><span>    </span><span style="color:#b48ead;">for </span><span>_ in </span><span style="color:#d08770;">0</span><span>..</span><span style="color:#d08770;">1000 </span><span>{
+</span><span>        state.</span><span style="color:#96b5b4;">print</span><span>();
+</span><span>    }
+</span><span>
+</span><span>    </span><span style="color:#96b5b4;">sleep</span><span>(Duration::from_secs(</span><span style="color:#d08770;">3</span><span>));
+</span><span>}
+</span><span>
+</span></code></pre>
+
+    </div>
+
+    
+    
+
+    <div class="post-footer">
+        
+            
+                <div class="post-tags">
+                    
+                        <a href="https://zuiyu1998.github.io/tags/q-a/">#q_a</a>
+                    
+                        <a href="https://zuiyu1998.github.io/tags/rust/">#rust</a>
+                    
+                        <a href="https://zuiyu1998.github.io/tags/mutex/">#mutex</a>
+                    
+                </div>
+            
+            
+                <div class="post-nav">
+                    
+                        <a class="previous" href="https:&#x2F;&#x2F;zuiyu1998.github.io&#x2F;neteq&#x2F;">‹ webrtc中neteq的设计思路</a>
+                    
+                    
+                        <a class="next" href="https:&#x2F;&#x2F;zuiyu1998.github.io&#x2F;unreal-learn-chapter-1&#x2F;">chapter1-从空白项目创建一个第三人称项目 ›</a>
+                    
+                </div>
+            
+
+        
+
+    </div>
+
+    
+    
+</article>
+
+
+                </div>
+            </main>
+
+            
+            
+        </div>
+
+      
+          <script type="text/javascript" src="https://zuiyu1998.github.io/even.js" ></script>
+      
+    </body>
+
+</html>

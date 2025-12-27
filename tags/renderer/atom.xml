@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="en">
+    <title> - renderer</title>
+    <link rel="self" type="application/atom+xml" href="https://zuiyu1998.github.io/tags/renderer/atom.xml"/>
+    <link rel="alternate" type="text/html" href="https://zuiyu1998.github.io/"/>
+    <generator uri="https://www.getzola.org/">Zola</generator>
+    <updated>2025-11-24T00:00:00+00:00</updated>
+    <id>https://zuiyu1998.github.io/tags/renderer/atom.xml</id>
+    <entry xml:lang="en">
+        <title>从零开始bevy渲染器设计-AsBindGroup</title>
+        <published>2025-11-24T00:00:00+00:00</published>
+        <updated>2025-11-24T00:00:00+00:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://zuiyu1998.github.io/bevy-renderer-03/"/>
+        <id>https://zuiyu1998.github.io/bevy-renderer-03/</id>
+        
+        <summary type="html">&lt;p&gt;这是探究 bevy renderer 渲染器的一系列文章。&lt;&#x2F;p&gt;</summary>
+        
+    </entry>
+    <entry xml:lang="en">
+        <title>从零开始bevy渲染器设计-01-渲染流程</title>
+        <published>2025-11-17T00:00:00+00:00</published>
+        <updated>2025-11-17T00:00:00+00:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://zuiyu1998.github.io/bevy-renderer-01/"/>
+        <id>https://zuiyu1998.github.io/bevy-renderer-01/</id>
+        
+        <summary type="html">&lt;p&gt;这是探究 bevy renderer 渲染器的一系列文章。这篇文章解析渲染流程。&lt;&#x2F;p&gt;</summary>
+        
+    </entry>
+    <entry xml:lang="en">
+        <title>从零开始bevy渲染器设计-00</title>
+        <published>2025-10-13T00:00:00+00:00</published>
+        <updated>2025-10-13T00:00:00+00:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://zuiyu1998.github.io/bevy-renderer/"/>
+        <id>https://zuiyu1998.github.io/bevy-renderer/</id>
+        
+        <summary type="html">&lt;p&gt;这是探究 bevy renderer 渲染器的一系列文章。&lt;&#x2F;p&gt;</summary>
+        
+    </entry>
+    <entry xml:lang="en">
+        <title>从零开始渲染器</title>
+        <published>2025-10-10T00:00:00+00:00</published>
+        <updated>2025-10-10T00:00:00+00:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://zuiyu1998.github.io/renderer/"/>
+        <id>https://zuiyu1998.github.io/renderer/</id>
+        
+        <summary type="html">&lt;p&gt;从零开始渲染器.&lt;&#x2F;p&gt;</summary>
+        
+    </entry>
+    <entry xml:lang="en">
+        <title>从零开始bevy渲染器设计-窗口与摄像机</title>
+        <published>2025-09-10T00:00:00+00:00</published>
+        <updated>2025-09-10T00:00:00+00:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://zuiyu1998.github.io/bevy-renderer-02/"/>
+        <id>https://zuiyu1998.github.io/bevy-renderer-02/</id>
+        
+        <summary type="html">&lt;p&gt;这是探究 bevy renderer 渲染器的一系列文章。&lt;&#x2F;p&gt;</summary>
+        
+    </entry>
+    <entry xml:lang="en">
+        <title>从零开始draft渲染器设计-00</title>
+        <published>2025-09-10T00:00:00+00:00</published>
+        <updated>2025-09-10T00:00:00+00:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://zuiyu1998.github.io/draft-renderer/"/>
+        <id>https://zuiyu1998.github.io/draft-renderer/</id>
+        
+        <summary type="html">&lt;p&gt;这是设计 draft renderer 渲染器的一系列文章。&lt;&#x2F;p&gt;</summary>
+        
+    </entry>
+    <entry xml:lang="en">
+        <title>从零开始渲染器-Pass</title>
+        <published>2025-07-31T00:00:00+00:00</published>
+        <updated>2025-07-31T00:00:00+00:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://zuiyu1998.github.io/renderer-01/"/>
+        <id>https://zuiyu1998.github.io/renderer-01/</id>
+        
+        <summary type="html">&lt;p&gt;从零开始渲染器.论 Pass 的设计。&lt;&#x2F;p&gt;</summary>
+        
+    </entry>
+    <entry xml:lang="en">
+        <title>从零开始渲染器-TransientResource</title>
+        <published>2025-07-31T00:00:00+00:00</published>
+        <updated>2025-07-31T00:00:00+00:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://zuiyu1998.github.io/renderer-02/"/>
+        <id>https://zuiyu1998.github.io/renderer-02/</id>
+        
+        <summary type="html">&lt;p&gt;从零开始渲染器.论 TransientResource。&lt;&#x2F;p&gt;</summary>
+        
+    </entry>
+    <entry xml:lang="en">
+        <title>基于frame-graph的渲染器设计思路</title>
+        <published>2025-07-07T00:00:00+00:00</published>
+        <updated>2025-07-07T00:00:00+00:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://zuiyu1998.github.io/frame-graph/"/>
+        <id>https://zuiyu1998.github.io/frame-graph/</id>
+        
+        <summary type="html">&lt;p&gt;这是探究使用 frame graph 实现渲染器的一系列文章。本篇文章探究了 frame-graph 的设计和一系列问题。&lt;&#x2F;p&gt;</summary>
+        
+    </entry>
+</feed>
