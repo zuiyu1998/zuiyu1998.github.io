@@ -32,8 +32,19 @@ tags = ["draft", "renderer"]
 渲染器当然可以通过软渲染实现 cpu 渲染物体，但是这种方式并不实用，只适合学习。
 渲染器正确渲染物体的方式是借助 gpu 这种额外的硬件。各种图形 api 实现了对 gpu 硬件的抽象。通常情况下只需要将物体转换为图形 api 能识别的对象就可以实现渲染了。
 常见的图形 api 有 Vulkan，Metal,DirectX,OpenGl。当前渲染器使用的图形 api 是 Wegbgpu。
-总结一般渲染器是怎么渲染物体？
+一般渲染器是怎么渲染物体？
 
-1. 将物体转化为图形 api 所能识别的对象。
-2. 通过图形 api 将对象传递给 gpu。
+1. 将物体转化为图形 api 所能识别的 gpu 对象。
+2. 通过图形 api 将 gpu 对象传递给 gpu。
 3. gpu 实现物体的渲染。
+
+# 怎么管理 gpu 对象
+
+1. 使用 frame graph 有向无环图来管理 gpu 对象的声明周期。
+2. 对于 frame graph 之外的 gpu 对象通过 gc 来管理。
+   - 使用 Buffer Allocator 来管理 gpu buffer
+
+# 将物体转化为图形 api 所能识别的 gpu 对象
+
+1. 将 mesh 转化为图形 api 所能识别的 gpu 对象
+   - meshcache
