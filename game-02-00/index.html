@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+      <meta http-equiv="X-UA-Compatible" content="IE=edge">
+      <meta http-equiv="content-type" content="text/html; charset=utf-8">
+
+      <!-- Enable responsiveness on mobile devices-->
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    
+      
+    
+
+      <title> - 人生模拟器</title>
+
+      
+
+      
+          <script src="https://cdnjs.cloudflare.com/ajax/libs/slideout/1.0.1/slideout.min.js"></script>
+          
+      
+
+      
+          <link rel="stylesheet" href="https://zuiyu1998.github.io/site.css">
+          
+      
+
+      
+      
+    </head>
+
+    <body>
+        <div class="container">
+
+            <div id="mobile-navbar" class="mobile-navbar">
+              <div class="mobile-header-logo">
+                <a href="https:&#x2F;&#x2F;zuiyu1998.github.io&#x2F;" class="logo">zuiyu&#x27;s blog</a>
+              </div>
+              <div class="mobile-navbar-icon icon-out">
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+            </div>
+
+            <nav id="mobile-menu" class="mobile-menu slideout-menu slideout-menu-left">
+              <ul class="mobile-menu-list">
+                
+                    <li class="mobile-menu-item">
+                        <a href="https:&#x2F;&#x2F;zuiyu1998.github.io&#x2F;">
+                            首页
+                        </a>
+                    </li>
+                
+                    <li class="mobile-menu-item">
+                        <a href="https:&#x2F;&#x2F;zuiyu1998.github.io&#x2F;&#x2F;tags">
+                            标签
+                        </a>
+                    </li>
+                
+              </ul>
+            </nav>
+
+            <header id="header">
+                <div class="logo"><a href="https:&#x2F;&#x2F;zuiyu1998.github.io&#x2F;">zuiyu&#x27;s blog</a></div>
+                <nav class="menu">
+                    <ul>
+                        
+                            <li>
+                                <a href="https:&#x2F;&#x2F;zuiyu1998.github.io&#x2F;">
+                                    首页
+                                </a>
+                            </li>
+                        
+                            <li>
+                                <a href="https:&#x2F;&#x2F;zuiyu1998.github.io&#x2F;&#x2F;tags">
+                                    标签
+                                </a>
+                            </li>
+                        
+                    </ul>
+                </nav>
+            </header>
+
+            <main>
+                <div class="content" id="mobile-panel">
+                    
+
+
+<div class="post-toc" id="post-toc">
+    <h2 class="post-toc-title">Contents</h2>
+    <div class="post-toc-content always-active">
+        <nav id="TableOfContents">
+            <ul>
+                
+                <li>
+                    <a href="https://zuiyu1998.github.io/game-02-00/#zong-ti-liu-cheng" class="toc-link">总体流程</a>
+                    
+                </li>
+                
+                <li>
+                    <a href="https://zuiyu1998.github.io/game-02-00/#zhu-yao-dui-xiang" class="toc-link">主要对象</a>
+                    
+                </li>
+                
+                <li>
+                    <a href="https://zuiyu1998.github.io/game-02-00/#ji-neng" class="toc-link">技能</a>
+                    
+                </li>
+                
+                <li>
+                    <a href="https://zuiyu1998.github.io/game-02-00/#guan-qia" class="toc-link">关卡</a>
+                    
+                </li>
+                
+                <li>
+                    <a href="https://zuiyu1998.github.io/game-02-00/#ren-wu-guan-li-qi" class="toc-link">任务管理器</a>
+                    
+                </li>
+                
+                <li>
+                    <a href="https://zuiyu1998.github.io/game-02-00/#qi-zi-sheng-cheng-qi" class="toc-link">棋子生成器</a>
+                    
+                </li>
+                
+            </ul>
+        </nav>
+    </div>
+</div>
+
+
+<article class="post">
+    
+    <header class="post__header">
+        <h1 class="post__title">
+            <a href="https:&#x2F;&#x2F;zuiyu1998.github.io&#x2F;game-02-00&#x2F;">人生模拟器</a>
+        </h1>
+        <div class="post__meta">
+            <span class="post__time">2025-09-10</span>
+            
+        </div>
+    </header>
+
+    <div class="post-content">
+      <p>这是一个合成类的游戏。</p>
+<span id="continue-reading"></span>
+<h1 id="zong-ti-liu-cheng">总体流程</h1>
+<p>玩家通过关卡获取新的行动，同时使用行动的效果通过关卡。
+在关卡中，玩家需要考虑体力、幸福、金钱的限制，避免突然暴毙。
+在玩家完成目标或者死亡后会进行经历结算。
+玩家的技能经验提升后会获得更高等级的心动。</p>
+<h1 id="zhu-yao-dui-xiang">主要对象</h1>
+<p>棋子，有多种获取方式。</p>
+<ul>
+<li>合成的主材料</li>
+<li>每次合成需要花费代价</li>
+<li>每个棋子都有增益</li>
+</ul>
+<p>代价处理器
+用于处理各种代价</p>
+<p>增益处理器
+用于处理各种增益</p>
+<p>技能
+玩家能力的抽象体现。</p>
+<ul>
+<li>技能的提升会带来更好的棋子</li>
+<li>技能的提升会带来相同类型的关卡触发概率</li>
+</ul>
+<p>关卡
+整个游戏体验的载体.玩家可以手动或者自动新增棋子，每次改动棋子都会改变玩家的状态。当玩家死亡或者任务完成，整个关卡结束。</p>
+<ul>
+<li>多个目标</li>
+<li>玩家状态的显示</li>
+<li>棋子的发放
+在棋盘的空位设置棋子</li>
+<li>棋子的合成</li>
+<li>确认任务的状态</li>
+</ul>
+<h1 id="ji-neng">技能</h1>
+<p>玩家能力的体现，也是玩家长期目标实现的前提。</p>
+<ul>
+<li>名称</li>
+<li>描述</li>
+<li>图标</li>
+<li>能力值</li>
+<li>根据能力等级匹配的棋子</li>
+</ul>
+<p>图标资源获取？</p>
+<h1 id="guan-qia">关卡</h1>
+<p>关卡分为多个对象实现。</p>
+<ul>
+<li>棋盘，负责管理棋子之间的交互。</li>
+<li>任务管理器</li>
+</ul>
+<h1 id="ren-wu-guan-li-qi">任务管理器</h1>
+<p>任务有多个。任务需要新增方便。</p>
+<h1 id="qi-zi-sheng-cheng-qi">棋子生成器</h1>
+<p>随机生成棋子
+在棋盘的空位设置棋子</p>
+
+    </div>
+
+    
+    
+
+    <div class="post-footer">
+        
+            
+                <div class="post-tags">
+                    
+                        <a href="https://zuiyu1998.github.io/tags/game/">#game</a>
+                    
+                        <a href="https://zuiyu1998.github.io/tags/he-cheng/">#合成</a>
+                    
+                        <a href="https://zuiyu1998.github.io/tags/xiao-chu/">#消除</a>
+                    
+                </div>
+            
+            
+                <div class="post-nav">
+                    
+                        <a class="previous" href="https:&#x2F;&#x2F;zuiyu1998.github.io&#x2F;draft-renderer&#x2F;">‹ 从零开始draft渲染器设计-00</a>
+                    
+                    
+                        <a class="next" href="https:&#x2F;&#x2F;zuiyu1998.github.io&#x2F;game-03-00&#x2F;">无尽长夜 ›</a>
+                    
+                </div>
+            
+
+        
+
+    </div>
+
+    
+    
+</article>
+
+
+                </div>
+            </main>
+
+            
+            
+        </div>
+
+      
+          <script type="text/javascript" src="https://zuiyu1998.github.io/even.js" ></script>
+      
+    </body>
+
+</html>

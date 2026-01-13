@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="en">
+    <title> - pan</title>
+    <link rel="self" type="application/atom+xml" href="https://zuiyu1998.github.io/tags/pan/atom.xml"/>
+    <link rel="alternate" type="text/html" href="https://zuiyu1998.github.io/"/>
+    <generator uri="https://www.getzola.org/">Zola</generator>
+    <updated>2026-01-09T00:00:00+00:00</updated>
+    <id>https://zuiyu1998.github.io/tags/pan/atom.xml</id>
+    <entry xml:lang="en">
+        <title>论平移摄像机的实现</title>
+        <published>2026-01-09T00:00:00+00:00</published>
+        <updated>2026-01-09T00:00:00+00:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://zuiyu1998.github.io/pan-camera/"/>
+        <id>https://zuiyu1998.github.io/pan-camera/</id>
+        
+        <summary type="html">&lt;p&gt;论平移摄像机的实现&lt;&#x2F;p&gt;</summary>
+        
+    </entry>
+</feed>

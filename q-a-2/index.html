@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+      <meta http-equiv="X-UA-Compatible" content="IE=edge">
+      <meta http-equiv="content-type" content="text/html; charset=utf-8">
+
+      <!-- Enable responsiveness on mobile devices-->
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    
+      
+    
+
+      <title> - 切片和原数组的长度关系</title>
+
+      
+
+      
+          <script src="https://cdnjs.cloudflare.com/ajax/libs/slideout/1.0.1/slideout.min.js"></script>
+          
+      
+
+      
+          <link rel="stylesheet" href="https://zuiyu1998.github.io/site.css">
+          
+      
+
+      
+      
+    </head>
+
+    <body>
+        <div class="container">
+
+            <div id="mobile-navbar" class="mobile-navbar">
+              <div class="mobile-header-logo">
+                <a href="https:&#x2F;&#x2F;zuiyu1998.github.io&#x2F;" class="logo">zuiyu&#x27;s blog</a>
+              </div>
+              <div class="mobile-navbar-icon icon-out">
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+            </div>
+
+            <nav id="mobile-menu" class="mobile-menu slideout-menu slideout-menu-left">
+              <ul class="mobile-menu-list">
+                
+                    <li class="mobile-menu-item">
+                        <a href="https:&#x2F;&#x2F;zuiyu1998.github.io&#x2F;">
+                            首页
+                        </a>
+                    </li>
+                
+                    <li class="mobile-menu-item">
+                        <a href="https:&#x2F;&#x2F;zuiyu1998.github.io&#x2F;&#x2F;tags">
+                            标签
+                        </a>
+                    </li>
+                
+              </ul>
+            </nav>
+
+            <header id="header">
+                <div class="logo"><a href="https:&#x2F;&#x2F;zuiyu1998.github.io&#x2F;">zuiyu&#x27;s blog</a></div>
+                <nav class="menu">
+                    <ul>
+                        
+                            <li>
+                                <a href="https:&#x2F;&#x2F;zuiyu1998.github.io&#x2F;">
+                                    首页
+                                </a>
+                            </li>
+                        
+                            <li>
+                                <a href="https:&#x2F;&#x2F;zuiyu1998.github.io&#x2F;&#x2F;tags">
+                                    标签
+                                </a>
+                            </li>
+                        
+                    </ul>
+                </nav>
+            </header>
+
+            <main>
+                <div class="content" id="mobile-panel">
+                    
+
+
+<div class="post-toc" id="post-toc">
+    <h2 class="post-toc-title">Contents</h2>
+    <div class="post-toc-content always-active">
+        <nav id="TableOfContents">
+            <ul>
+                
+                <li>
+                    <a href="https://zuiyu1998.github.io/q-a-2/#yan-zheng" class="toc-link">验证</a>
+                    
+                </li>
+                
+            </ul>
+        </nav>
+    </div>
+</div>
+
+
+<article class="post">
+    
+    <header class="post__header">
+        <h1 class="post__title">
+            <a href="https:&#x2F;&#x2F;zuiyu1998.github.io&#x2F;q-a-2&#x2F;">切片和原数组的长度关系</a>
+        </h1>
+        <div class="post__meta">
+            <span class="post__time">2025-03-05</span>
+            
+        </div>
+    </header>
+
+    <div class="post-content">
+      <p>场景：</p>
+<p>一个数组的切片长度和原数组的长度关系是什么样的？</p>
+<ul>
+<li>两者一样</li>
+<li>各自维护自己的长度信息</li>
+</ul>
+<span id="continue-reading"></span>
+<h1 id="yan-zheng">验证</h1>
+<p>设计一个简单的代码如下:</p>
+<pre data-lang="rust" style="background-color:#2b303b;color:#c0c5ce;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="color:#b48ead;">fn </span><span style="color:#8fa1b3;">main</span><span>() {
+</span><span>    </span><span style="color:#b48ead;">let</span><span> bytes = vec![</span><span style="color:#d08770;">1</span><span>, </span><span style="color:#d08770;">2</span><span>, </span><span style="color:#d08770;">3</span><span>];
+</span><span>
+</span><span>    println!(&quot;</span><span style="color:#a3be8c;">bytes len:</span><span style="color:#d08770;">{}</span><span>&quot;, bytes.</span><span style="color:#96b5b4;">len</span><span>());
+</span><span>
+</span><span>    </span><span style="color:#b48ead;">let</span><span> slice = &amp;bytes[</span><span style="color:#d08770;">0</span><span>..</span><span style="color:#d08770;">2</span><span>];
+</span><span>    println!(&quot;</span><span style="color:#a3be8c;">slice len:</span><span style="color:#d08770;">{}</span><span>&quot;, slice.</span><span style="color:#96b5b4;">len</span><span>());
+</span><span>}
+</span><span>
+</span></code></pre>
+<p>运行程序后，可以看到终端输出 3 和 2.可以看到 slice 维护了自己的长度信息。</p>
+
+    </div>
+
+    
+    
+
+    <div class="post-footer">
+        
+            
+                <div class="post-tags">
+                    
+                        <a href="https://zuiyu1998.github.io/tags/q-a/">#q_a</a>
+                    
+                        <a href="https://zuiyu1998.github.io/tags/rust/">#rust</a>
+                    
+                        <a href="https://zuiyu1998.github.io/tags/mutex/">#mutex</a>
+                    
+                </div>
+            
+            
+                <div class="post-nav">
+                    
+                        <a class="previous" href="https:&#x2F;&#x2F;zuiyu1998.github.io&#x2F;openim-msg-transfer&#x2F;">‹ opemim-msg-transfer</a>
+                    
+                    
+                        <a class="next" href="https:&#x2F;&#x2F;zuiyu1998.github.io&#x2F;neteq&#x2F;">webrtc中neteq的设计思路 ›</a>
+                    
+                </div>
+            
+
+        
+
+    </div>
+
+    
+    
+</article>
+
+
+                </div>
+            </main>
+
+            
+            
+        </div>
+
+      
+          <script type="text/javascript" src="https://zuiyu1998.github.io/even.js" ></script>
+      
+    </body>
+
+</html>

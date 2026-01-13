@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+      <meta http-equiv="X-UA-Compatible" content="IE=edge">
+      <meta http-equiv="content-type" content="text/html; charset=utf-8">
+
+      <!-- Enable responsiveness on mobile devices-->
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    
+      
+    
+
+      <title> - 从零开始draft渲染器设计-00</title>
+
+      
+
+      
+          <script src="https://cdnjs.cloudflare.com/ajax/libs/slideout/1.0.1/slideout.min.js"></script>
+          
+      
+
+      
+          <link rel="stylesheet" href="https://zuiyu1998.github.io/site.css">
+          
+      
+
+      
+      
+    </head>
+
+    <body>
+        <div class="container">
+
+            <div id="mobile-navbar" class="mobile-navbar">
+              <div class="mobile-header-logo">
+                <a href="https:&#x2F;&#x2F;zuiyu1998.github.io&#x2F;" class="logo">zuiyu&#x27;s blog</a>
+              </div>
+              <div class="mobile-navbar-icon icon-out">
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+            </div>
+
+            <nav id="mobile-menu" class="mobile-menu slideout-menu slideout-menu-left">
+              <ul class="mobile-menu-list">
+                
+                    <li class="mobile-menu-item">
+                        <a href="https:&#x2F;&#x2F;zuiyu1998.github.io&#x2F;">
+                            首页
+                        </a>
+                    </li>
+                
+                    <li class="mobile-menu-item">
+                        <a href="https:&#x2F;&#x2F;zuiyu1998.github.io&#x2F;&#x2F;tags">
+                            标签
+                        </a>
+                    </li>
+                
+              </ul>
+            </nav>
+
+            <header id="header">
+                <div class="logo"><a href="https:&#x2F;&#x2F;zuiyu1998.github.io&#x2F;">zuiyu&#x27;s blog</a></div>
+                <nav class="menu">
+                    <ul>
+                        
+                            <li>
+                                <a href="https:&#x2F;&#x2F;zuiyu1998.github.io&#x2F;">
+                                    首页
+                                </a>
+                            </li>
+                        
+                            <li>
+                                <a href="https:&#x2F;&#x2F;zuiyu1998.github.io&#x2F;&#x2F;tags">
+                                    标签
+                                </a>
+                            </li>
+                        
+                    </ul>
+                </nav>
+            </header>
+
+            <main>
+                <div class="content" id="mobile-panel">
+                    
+
+
+<div class="post-toc" id="post-toc">
+    <h2 class="post-toc-title">Contents</h2>
+    <div class="post-toc-content always-active">
+        <nav id="TableOfContents">
+            <ul>
+                
+                <li>
+                    <a href="https://zuiyu1998.github.io/draft-renderer/#xuan-ran-qi" class="toc-link">渲染器</a>
+                    
+                </li>
+                
+                <li>
+                    <a href="https://zuiyu1998.github.io/draft-renderer/#wu-ti-you-na-xie" class="toc-link">物体有哪些</a>
+                    
+                </li>
+                
+                <li>
+                    <a href="https://zuiyu1998.github.io/draft-renderer/#zen-me-huo-qu-shi-jie-de-wu-ti" class="toc-link">怎么获取世界的物体</a>
+                    
+                </li>
+                
+                <li>
+                    <a href="https://zuiyu1998.github.io/draft-renderer/#zen-me-xuan-ran-wu-ti" class="toc-link">怎么渲染物体</a>
+                    
+                </li>
+                
+                <li>
+                    <a href="https://zuiyu1998.github.io/draft-renderer/#zen-me-guan-li-gpu-dui-xiang" class="toc-link">怎么管理 gpu 对象</a>
+                    
+                </li>
+                
+                <li>
+                    <a href="https://zuiyu1998.github.io/draft-renderer/#jiang-wu-ti-zhuan-hua-wei-tu-xing-api-suo-neng-shi-bie-de-gpu-dui-xiang" class="toc-link">将物体转化为图形 api 所能识别的 gpu 对象</a>
+                    
+                </li>
+                
+            </ul>
+        </nav>
+    </div>
+</div>
+
+
+<article class="post">
+    
+    <header class="post__header">
+        <h1 class="post__title">
+            <a href="https:&#x2F;&#x2F;zuiyu1998.github.io&#x2F;draft-renderer&#x2F;">从零开始draft渲染器设计-00</a>
+        </h1>
+        <div class="post__meta">
+            <span class="post__time">2025-09-10</span>
+            
+        </div>
+    </header>
+
+    <div class="post-content">
+      <p>这是设计 draft renderer 渲染器的一系列文章。</p>
+<span id="continue-reading"></span>
+<h1 id="xuan-ran-qi">渲染器</h1>
+<p>渲染器是一个将世界中的物体渲染到屏幕上的工具。</p>
+<ul>
+<li>物体有哪些</li>
+<li>怎么获取世界的物体</li>
+<li>怎么渲染物体</li>
+</ul>
+<h1 id="wu-ti-you-na-xie">物体有哪些</h1>
+<ul>
+<li>网格</li>
+<li>材质</li>
+</ul>
+<h1 id="zen-me-huo-qu-shi-jie-de-wu-ti">怎么获取世界的物体</h1>
+<p>世界是多类的，渲染器无法获取知晓世界。因此应该让世界告诉给渲染器有哪些物体。</p>
+<h1 id="zen-me-xuan-ran-wu-ti">怎么渲染物体</h1>
+<p>渲染器当然可以通过软渲染实现 cpu 渲染物体，但是这种方式并不实用，只适合学习。
+渲染器正确渲染物体的方式是借助 gpu 这种额外的硬件。各种图形 api 实现了对 gpu 硬件的抽象。通常情况下只需要将物体转换为图形 api 能识别的对象就可以实现渲染了。
+常见的图形 api 有 Vulkan，Metal,DirectX,OpenGl。当前渲染器使用的图形 api 是 Wegbgpu。
+一般渲染器是怎么渲染物体？</p>
+<ol>
+<li>将物体转化为图形 api 所能识别的 gpu 对象。</li>
+<li>通过图形 api 将 gpu 对象传递给 gpu。</li>
+<li>gpu 实现物体的渲染。</li>
+</ol>
+<h1 id="zen-me-guan-li-gpu-dui-xiang">怎么管理 gpu 对象</h1>
+<ol>
+<li>使用 frame graph 有向无环图来管理 gpu 对象的声明周期。</li>
+<li>对于 frame graph 之外的 gpu 对象通过 gc 来管理。
+<ul>
+<li>使用 Buffer Allocator 来管理 gpu buffer</li>
+</ul>
+</li>
+</ol>
+<h1 id="jiang-wu-ti-zhuan-hua-wei-tu-xing-api-suo-neng-shi-bie-de-gpu-dui-xiang">将物体转化为图形 api 所能识别的 gpu 对象</h1>
+<ol>
+<li>将 mesh 转化为图形 api 所能识别的 gpu 对象
+<ul>
+<li>meshcache</li>
+</ul>
+</li>
+</ol>
+
+    </div>
+
+    
+    
+
+    <div class="post-footer">
+        
+            
+                <div class="post-tags">
+                    
+                        <a href="https://zuiyu1998.github.io/tags/draft/">#draft</a>
+                    
+                        <a href="https://zuiyu1998.github.io/tags/renderer/">#renderer</a>
+                    
+                </div>
+            
+            
+                <div class="post-nav">
+                    
+                        <a class="previous" href="https:&#x2F;&#x2F;zuiyu1998.github.io&#x2F;bevy-renderer-02&#x2F;">‹ 从零开始bevy渲染器设计-窗口与摄像机</a>
+                    
+                    
+                        <a class="next" href="https:&#x2F;&#x2F;zuiyu1998.github.io&#x2F;game-02-00&#x2F;">人生模拟器 ›</a>
+                    
+                </div>
+            
+
+        
+
+    </div>
+
+    
+    
+</article>
+
+
+                </div>
+            </main>
+
+            
+            
+        </div>
+
+      
+          <script type="text/javascript" src="https://zuiyu1998.github.io/even.js" ></script>
+      
+    </body>
+
+</html>

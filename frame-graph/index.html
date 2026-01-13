@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+      <meta http-equiv="X-UA-Compatible" content="IE=edge">
+      <meta http-equiv="content-type" content="text/html; charset=utf-8">
+
+      <!-- Enable responsiveness on mobile devices-->
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    
+      
+    
+
+      <title> - 基于frame-graph的渲染器设计思路</title>
+
+      
+
+      
+          <script src="https://cdnjs.cloudflare.com/ajax/libs/slideout/1.0.1/slideout.min.js"></script>
+          
+      
+
+      
+          <link rel="stylesheet" href="https://zuiyu1998.github.io/site.css">
+          
+      
+
+      
+      
+    </head>
+
+    <body>
+        <div class="container">
+
+            <div id="mobile-navbar" class="mobile-navbar">
+              <div class="mobile-header-logo">
+                <a href="https:&#x2F;&#x2F;zuiyu1998.github.io&#x2F;" class="logo">zuiyu&#x27;s blog</a>
+              </div>
+              <div class="mobile-navbar-icon icon-out">
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+            </div>
+
+            <nav id="mobile-menu" class="mobile-menu slideout-menu slideout-menu-left">
+              <ul class="mobile-menu-list">
+                
+                    <li class="mobile-menu-item">
+                        <a href="https:&#x2F;&#x2F;zuiyu1998.github.io&#x2F;">
+                            首页
+                        </a>
+                    </li>
+                
+                    <li class="mobile-menu-item">
+                        <a href="https:&#x2F;&#x2F;zuiyu1998.github.io&#x2F;&#x2F;tags">
+                            标签
+                        </a>
+                    </li>
+                
+              </ul>
+            </nav>
+
+            <header id="header">
+                <div class="logo"><a href="https:&#x2F;&#x2F;zuiyu1998.github.io&#x2F;">zuiyu&#x27;s blog</a></div>
+                <nav class="menu">
+                    <ul>
+                        
+                            <li>
+                                <a href="https:&#x2F;&#x2F;zuiyu1998.github.io&#x2F;">
+                                    首页
+                                </a>
+                            </li>
+                        
+                            <li>
+                                <a href="https:&#x2F;&#x2F;zuiyu1998.github.io&#x2F;&#x2F;tags">
+                                    标签
+                                </a>
+                            </li>
+                        
+                    </ul>
+                </nav>
+            </header>
+
+            <main>
+                <div class="content" id="mobile-panel">
+                    
+
+
+<div class="post-toc" id="post-toc">
+    <h2 class="post-toc-title">Contents</h2>
+    <div class="post-toc-content always-active">
+        <nav id="TableOfContents">
+            <ul>
+                
+                <li>
+                    <a href="https://zuiyu1998.github.io/frame-graph/#frame-graph" class="toc-link">frame-graph</a>
+                    
+                </li>
+                
+                <li>
+                    <a href="https://zuiyu1998.github.io/frame-graph/#transient-resource" class="toc-link">Transient Resource</a>
+                    
+                </li>
+                
+                <li>
+                    <a href="https://zuiyu1998.github.io/frame-graph/#passnode" class="toc-link">PassNode</a>
+                    
+                </li>
+                
+            </ul>
+        </nav>
+    </div>
+</div>
+
+
+<article class="post">
+    
+    <header class="post__header">
+        <h1 class="post__title">
+            <a href="https:&#x2F;&#x2F;zuiyu1998.github.io&#x2F;frame-graph&#x2F;">基于frame-graph的渲染器设计思路</a>
+        </h1>
+        <div class="post__meta">
+            <span class="post__time">2025-07-07</span>
+            
+        </div>
+    </header>
+
+    <div class="post-content">
+      <p>这是探究使用 frame graph 实现渲染器的一系列文章。本篇文章探究了 frame-graph 的设计和一系列问题。</p>
+<span id="continue-reading"></span>
+<h1 id="frame-graph">frame-graph</h1>
+<p>frame graph 是一个有向无环图。它由两类节点构成，渲染节点和资源节点。
+渲染节点负责使用实际的 gpu 资源进行渲染。
+资源节点是实际 gpu 资源的占位。</p>
+<p>frame graph 对一帧的渲染分为三个阶段：</p>
+<ul>
+<li>Setup， 该阶段构建 frame graph 实例。</li>
+<li>Compile, 该阶段计算渲染节点使用资源的生命周期</li>
+<li>Execute，该阶段获取 gpu 资源，并进行渲染</li>
+</ul>
+<h1 id="transient-resource">Transient Resource</h1>
+<p>实际资源的占位。通常情况下指的是 Buffer 和 Texture。Transient Resource 分为两部分，一个是在 frame_graph 外管理的资源，一部分是 frame_graph 管理的资源。前者是资源的实例，后者是资源的描述。</p>
+<h1 id="passnode">PassNode</h1>
+<p>渲染节点描述了当前节点利用资源进行渲染的过程。</p>
+<ol>
+<li>如何获取要使用的资源</li>
+<li>使用资源进行渲染的过程。</li>
+</ol>
+<p>使用命令模式实现资源进行渲染的过程。</p>
+
+    </div>
+
+    
+    
+
+    <div class="post-footer">
+        
+            
+                <div class="post-tags">
+                    
+                        <a href="https://zuiyu1998.github.io/tags/frame-graph/">#frame_graph</a>
+                    
+                        <a href="https://zuiyu1998.github.io/tags/renderer/">#renderer</a>
+                    
+                </div>
+            
+            
+                <div class="post-nav">
+                    
+                        <a class="previous" href="https:&#x2F;&#x2F;zuiyu1998.github.io&#x2F;renderer-02&#x2F;">‹ 从零开始渲染器-TransientResource</a>
+                    
+                    
+                        <a class="next" href="https:&#x2F;&#x2F;zuiyu1998.github.io&#x2F;fyrox&#x2F;">论Fyrox中Node的实现 ›</a>
+                    
+                </div>
+            
+
+        
+
+    </div>
+
+    
+    
+</article>
+
+
+                </div>
+            </main>
+
+            
+            
+        </div>
+
+      
+          <script type="text/javascript" src="https://zuiyu1998.github.io/even.js" ></script>
+      
+    </body>
+
+</html>

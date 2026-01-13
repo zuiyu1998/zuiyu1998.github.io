@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="en">
+    <title> - game</title>
+    <link rel="self" type="application/atom+xml" href="https://zuiyu1998.github.io/tags/game/atom.xml"/>
+    <link rel="alternate" type="text/html" href="https://zuiyu1998.github.io/"/>
+    <generator uri="https://www.getzola.org/">Zola</generator>
+    <updated>2025-12-28T00:00:00+00:00</updated>
+    <id>https://zuiyu1998.github.io/tags/game/atom.xml</id>
+    <entry xml:lang="en">
+        <title>极简塔防</title>
+        <published>2025-12-28T00:00:00+00:00</published>
+        <updated>2025-12-28T00:00:00+00:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://zuiyu1998.github.io/minimalist-tower-defense/"/>
+        <id>https://zuiyu1998.github.io/minimalist-tower-defense/</id>
+        
+        <summary type="html">&lt;p&gt;论极简塔防的游戏设计。&lt;&#x2F;p&gt;</summary>
+        
+    </entry>
+    <entry xml:lang="en">
+        <title>人生模拟器</title>
+        <published>2025-09-10T00:00:00+00:00</published>
+        <updated>2025-09-10T00:00:00+00:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://zuiyu1998.github.io/game-02-00/"/>
+        <id>https://zuiyu1998.github.io/game-02-00/</id>
+        
+        <summary type="html">&lt;p&gt;这是一个合成类的游戏。&lt;&#x2F;p&gt;</summary>
+        
+    </entry>
+    <entry xml:lang="en">
+        <title>无尽长夜</title>
+        <published>2025-09-10T00:00:00+00:00</published>
+        <updated>2025-09-10T00:00:00+00:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://zuiyu1998.github.io/game-03-00/"/>
+        <id>https://zuiyu1998.github.io/game-03-00/</id>
+        
+        <summary type="html">&lt;p&gt;这是一个塔防类的游戏。&lt;&#x2F;p&gt;</summary>
+        
+    </entry>
+    <entry xml:lang="en">
+        <title>论游戏设计</title>
+        <published>2025-06-13T00:00:00+00:00</published>
+        <updated>2025-06-13T00:00:00+00:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://zuiyu1998.github.io/game-design/"/>
+        <id>https://zuiyu1998.github.io/game-design/</id>
+        
+        <summary type="html">&lt;p&gt;论游戏设计。&lt;&#x2F;p&gt;</summary>
+        
+    </entry>
+    <entry xml:lang="en">
+        <title>论游戏的技能系统</title>
+        <published>2025-06-13T00:00:00+00:00</published>
+        <updated>2025-06-13T00:00:00+00:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://zuiyu1998.github.io/game-skill-01/"/>
+        <id>https://zuiyu1998.github.io/game-skill-01/</id>
+        
+        <summary type="html">&lt;p&gt;论游戏的技能系统。&lt;&#x2F;p&gt;</summary>
+        
+    </entry>
+    <entry xml:lang="en">
+        <title>论游戏的任务系统</title>
+        <published>2025-06-13T00:00:00+00:00</published>
+        <updated>2025-06-13T00:00:00+00:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://zuiyu1998.github.io/game-task-01/"/>
+        <id>https://zuiyu1998.github.io/game-task-01/</id>
+        
+        <summary type="html">&lt;p&gt;论游戏的任务系统。&lt;&#x2F;p&gt;</summary>
+        
+    </entry>
+</feed>
