@@ -1,6 +1,6 @@
 +++
 title = "从零开始draft渲染器设计-00"
-date = 2025-09-10
+date = 2026-01-14
 
 [taxonomies]
 tags = ["draft", "renderer"]
@@ -48,3 +48,4 @@ tags = ["draft", "renderer"]
 
 1. 将 mesh 转化为图形 api 所能识别的 gpu 对象
    - meshcache
+2. 将 mesh 和 materaial 转化为所能识别的 gpu 对象。
