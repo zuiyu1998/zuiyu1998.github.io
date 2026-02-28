@@ -1,6 +1,6 @@
 +++
 title = "论bevy的渲染器设计-00"
-date = 2025-10-13
+date = 2026-02-28
 
 [taxonomies]
 tags = ["bevy", "renderer"]
@@ -18,3 +18,5 @@ tags = ["bevy", "renderer"]
 
 1. 将可渲染的对象转化为图形api可识别的对象
 2. 剔除哪些不必要渲染的渲染对象
+
+# 图形api

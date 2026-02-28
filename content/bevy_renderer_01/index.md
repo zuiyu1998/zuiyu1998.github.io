@@ -1,22 +1,15 @@
 +++
-title = "从零开始bevy渲染器设计-01-渲染流程"
+title = "从零开始bevy渲染器设计-01-获取世界数据"
 date = 2025-11-17
 
 [taxonomies]
 tags = ["bevy", "renderer"]
 +++
 
-这是探究 bevy renderer 渲染器的一系列文章。这篇文章解析渲染流程。
+这是探究 bevy renderer 渲染器的一系列文章。这篇文章讨论如何从主世界获取数据到渲染世界。
 
 <!-- more -->
+# ExtractPlugin
 
-# 渲染流程
-
-每个摄像机摄像。
-将摄像机写入窗口中。
-
-render_system 位于 bevy_render/src/renderer.rs 文件中。整体逻辑分为三部分。
-
-- RenderGraph 的更新
-- RenderGraphRunner 的 run 函数
-- 窗口更新
+ExtractPlugin是一个用于从bevy主世界获取数据到渲染数据的plugin.
+在RenderSystems中ExtractCommands中执行ExtractSchedule。
