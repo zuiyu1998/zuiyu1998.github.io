@@ -1,15 +1,18 @@
 +++
-title = "从零开始bevy渲染器设计-窗口与摄像机"
-date = 2025-09-10
+title = "从零开始bevy渲染器设计-02-schedule"
+date = 2026-03-01
 
 [taxonomies]
 tags = ["bevy", "renderer"]
 +++
 
-这是探究 bevy renderer 渲染器的一系列文章。
+这是探究 bevy renderer 渲染器的一系列文章。这篇文章谈论渲染世界的调度
 
 <!-- more -->
 
-# 窗口
+# Render
 
-在各平台上的窗口实例中获取对应的 surface，提取对应的 TextureView。摄像机获取指向的 surface 资源。
+渲染世界的顶层调度为Render。该调度如下:
+
+- ExtractCommands 从主世界获取数据
+- 其他
