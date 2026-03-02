@@ -1,6 +1,6 @@
 +++
 title = "从零开始bevy渲染器设计-01-图形api"
-date = 2026-02-28
+date = 2026-03-01
 
 [taxonomies]
 tags = ["bevy", "renderer"]
@@ -14,3 +14,13 @@ tags = ["bevy", "renderer"]
 
 图形api通常情况下指的是opengl、metal、direct12这种对硬件抽象的sdk。
 游戏引擎的使用者不需要关注这些图形api，因此需要有一个中间层对图形api进行抽象。
+在bevy中现在使用的是webgpu。
+
+因为webgpu的接口是异步的，当前webgpu资源的创建比较复杂。
+需要创建一个线程共享的变量用于占位，等待资源初始化才开始整个系统的执行。
+
+在bevy中定义为RenderResources和FutureRenderResources
+
+# 优化
+
+支持多个不同的图形api，抹除图形api之间的差距。
