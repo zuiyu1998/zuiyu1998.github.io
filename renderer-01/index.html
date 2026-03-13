@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+      <meta http-equiv="X-UA-Compatible" content="IE=edge">
+      <meta http-equiv="content-type" content="text/html; charset=utf-8">
+
+      <!-- Enable responsiveness on mobile devices-->
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    
+      
+    
+
+      <title> - 从零开始渲染器-Pass</title>
+
+      
+
+      
+          <script src="https://cdnjs.cloudflare.com/ajax/libs/slideout/1.0.1/slideout.min.js"></script>
+          
+      
+
+      
+          <link rel="stylesheet" href="https://zuiyu1998.github.io/site.css">
+          
+      
+
+      
+      
+    </head>
+
+    <body>
+        <div class="container">
+
+            <div id="mobile-navbar" class="mobile-navbar">
+              <div class="mobile-header-logo">
+                <a href="https:&#x2F;&#x2F;zuiyu1998.github.io&#x2F;" class="logo">zuiyu&#x27;s blog</a>
+              </div>
+              <div class="mobile-navbar-icon icon-out">
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+            </div>
+
+            <nav id="mobile-menu" class="mobile-menu slideout-menu slideout-menu-left">
+              <ul class="mobile-menu-list">
+                
+                    <li class="mobile-menu-item">
+                        <a href="https:&#x2F;&#x2F;zuiyu1998.github.io&#x2F;">
+                            首页
+                        </a>
+                    </li>
+                
+                    <li class="mobile-menu-item">
+                        <a href="https:&#x2F;&#x2F;zuiyu1998.github.io&#x2F;&#x2F;tags">
+                            标签
+                        </a>
+                    </li>
+                
+              </ul>
+            </nav>
+
+            <header id="header">
+                <div class="logo"><a href="https:&#x2F;&#x2F;zuiyu1998.github.io&#x2F;">zuiyu&#x27;s blog</a></div>
+                <nav class="menu">
+                    <ul>
+                        
+                            <li>
+                                <a href="https:&#x2F;&#x2F;zuiyu1998.github.io&#x2F;">
+                                    首页
+                                </a>
+                            </li>
+                        
+                            <li>
+                                <a href="https:&#x2F;&#x2F;zuiyu1998.github.io&#x2F;&#x2F;tags">
+                                    标签
+                                </a>
+                            </li>
+                        
+                    </ul>
+                </nav>
+            </header>
+
+            <main>
+                <div class="content" id="mobile-panel">
+                    
+
+
+<div class="post-toc" id="post-toc">
+    <h2 class="post-toc-title">Contents</h2>
+    <div class="post-toc-content always-active">
+        <nav id="TableOfContents">
+            <ul>
+                
+                <li>
+                    <a href="https://zuiyu1998.github.io/renderer-01/#xu-qiu" class="toc-link">需求</a>
+                    
+                </li>
+                
+                <li>
+                    <a href="https://zuiyu1998.github.io/renderer-01/#shi-xian" class="toc-link">实现</a>
+                    
+                </li>
+                
+                <li>
+                    <a href="https://zuiyu1998.github.io/renderer-01/#wen-ti" class="toc-link">问题</a>
+                    
+                </li>
+                
+            </ul>
+        </nav>
+    </div>
+</div>
+
+
+<article class="post">
+    
+    <header class="post__header">
+        <h1 class="post__title">
+            <a href="https:&#x2F;&#x2F;zuiyu1998.github.io&#x2F;renderer-01&#x2F;">从零开始渲染器-Pass</a>
+        </h1>
+        <div class="post__meta">
+            <span class="post__time">2025-07-31</span>
+            
+        </div>
+    </header>
+
+    <div class="post-content">
+      <p>从零开始渲染器.论 Pass 的设计。</p>
+<span id="continue-reading"></span>
+<h1 id="xu-qiu">需求</h1>
+<p>在一般的流程中，需要手动指定要使用的 pipeline，buffer，texture，bindgroup 构建 RenderPass 或者 ComputerPass。手动容易出错，且对人的要求较高。因此实现一个对象自动实现对 wgpu 的操作。</p>
+<h1 id="shi-xian">实现</h1>
+<p>使用命令模式抽象对 wgpu 的操作。而 Pass 就是该命令的集合。</p>
+<pre class="giallo" style="color: #CDD6F4; background-color: #1E1E2E;"><code data-lang="rust"><span class="giallo-l"><span style="color: #CBA6F7;">pub trait</span><span style="color: #F9E2AF;font-style: italic;"> PassCommand</span><span style="color: #94E2D5;">:</span><span style="color: #9399B2;"> &#39;</span><span style="color: #89B4FA;font-style: italic;">static</span><span style="color: #94E2D5;"> +</span><span style="color: #F9E2AF;font-style: italic;"> Send</span><span style="color: #94E2D5;"> +</span><span style="color: #F9E2AF;font-style: italic;"> Sync</span><span style="color: #9399B2;"> {</span></span>
+<span class="giallo-l"><span style="color: #CBA6F7;">    fn</span><span style="color: #89B4FA;font-style: italic;"> execute</span><span style="color: #9399B2;">(</span><span style="color: #94E2D5;">&amp;</span><span style="color: #F38BA8;">self</span><span style="color: #9399B2;">,</span><span style="color: #EBA0AC;"> context</span><span style="color: #94E2D5;">:</span><span style="color: #F9E2AF;font-style: italic;"> PassContext</span><span style="color: #9399B2;">);</span></span>
+<span class="giallo-l"><span style="color: #9399B2;">}</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span style="color: #CBA6F7;">pub struct</span><span style="color: #F9E2AF;font-style: italic;"> PassContext</span><span style="color: #89DCEB;">&lt;</span><span style="color: #9399B2;">&#39;</span><span style="color: #89B4FA;font-style: italic;">a</span><span style="color: #89DCEB;">&gt;</span><span style="color: #9399B2;"> {</span></span>
+<span class="giallo-l"><span style="color: #CBA6F7;">    pub</span><span> enconder</span><span style="color: #94E2D5;">: &amp;</span><span style="color: #9399B2;">&#39;</span><span style="color: #89B4FA;font-style: italic;">a</span><span style="color: #CBA6F7;"> mut</span><span style="color: #F9E2AF;font-style: italic;"> CommandEncoder</span><span style="color: #9399B2;">,</span></span>
+<span class="giallo-l"><span style="color: #CBA6F7;">    pub</span><span> resource_register_context</span><span style="color: #94E2D5;">: &amp;</span><span style="color: #9399B2;">&#39;</span><span style="color: #89B4FA;font-style: italic;">a</span><span style="color: #CBA6F7;"> mut</span><span style="color: #F9E2AF;font-style: italic;"> ResourceRegistryContext</span><span style="color: #9399B2;">,</span></span>
+<span class="giallo-l"><span style="color: #9399B2;">}</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span style="color: #CBA6F7;">pub struct</span><span style="color: #F9E2AF;font-style: italic;"> ResourceRegistryContext</span><span style="color: #9399B2;"> {</span></span>
+<span class="giallo-l"><span style="color: #CBA6F7;">    pub</span><span> resources</span><span style="color: #94E2D5;">:</span><span style="color: #F9E2AF;font-style: italic;"> ResourceRegisterContainer</span><span style="color: #9399B2;">,</span></span>
+<span class="giallo-l"><span style="color: #9399B2;">}</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span style="color: #CBA6F7;">pub struct</span><span style="color: #F9E2AF;font-style: italic;"> ResourceRegisterContainer</span><span style="color: #9399B2;"> {}</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span style="color: #CBA6F7;">pub struct</span><span style="color: #F9E2AF;font-style: italic;"> Pass</span><span style="color: #9399B2;">(</span><span style="color: #F9E2AF;font-style: italic;">Vec</span><span style="color: #89DCEB;">&lt;</span><span style="color: #F9E2AF;font-style: italic;">Box</span><span style="color: #89DCEB;">&lt;</span><span style="color: #CBA6F7;">dyn</span><span style="color: #F9E2AF;font-style: italic;"> PassCommand</span><span style="color: #89DCEB;">&gt;&gt;</span><span style="color: #9399B2;">);</span></span>
+<span class="giallo-l"></span></code></pre>
+<p>PassCommand trait 负责实际的渲染过程。Pass 保存渲染过程中要执行的指令。PassContext 为 PassCommand 执行过程中的上下文。其中 ResourceRegisterContainer 为当前上下文中使用的实际资源列表。这个资源列表由 frame graph 自动填充。</p>
+<h1 id="wen-ti">问题</h1>
+<p>RenderPass 如何设计？ComputerPass 如何设计。</p>
+
+    </div>
+
+    
+    
+
+    <div class="post-footer">
+        
+            
+                <div class="post-tags">
+                    
+                        <a href="https://zuiyu1998.github.io/tags/renderer/">#renderer</a>
+                    
+                        <a href="https://zuiyu1998.github.io/tags/rust/">#rust</a>
+                    
+                        <a href="https://zuiyu1998.github.io/tags/wgpu/">#wgpu</a>
+                    
+                </div>
+            
+            
+                <div class="post-nav">
+                    
+                        <a class="previous" href="https:&#x2F;&#x2F;zuiyu1998.github.io&#x2F;fyrox-immutable-string&#x2F;">‹ 论Fyrox中ImmutableString的实现</a>
+                    
+                    
+                        <a class="next" href="https:&#x2F;&#x2F;zuiyu1998.github.io&#x2F;renderer-02&#x2F;">从零开始渲染器-TransientResource ›</a>
+                    
+                </div>
+            
+
+        
+
+    </div>
+
+    
+    
+</article>
+
+
+                </div>
+            </main>
+
+            
+            
+        </div>
+
+      
+          <script type="text/javascript" src="https://zuiyu1998.github.io/even.js" ></script>
+      
+    </body>
+
+</html>
