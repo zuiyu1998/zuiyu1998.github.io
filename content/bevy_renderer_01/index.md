@@ -175,3 +175,8 @@ fn rotate(mut query: Query<&mut Transform, With<Mesh2d>>, time: Res<Time>) {
 
 在这个案例中Mesh2d是几何体，MeshMaterial2d是材质。几何体和材质是如何被bevy 2d renderer所渲染。
 Mesh2d存储的是Mesh的句柄，Mesh2d指向的几何体数据存储在Mesh的资源中。
+
+RenderAssetPlugin负责从主世界获取资源到渲染世界。
+在RenderPlugin中引入的MeshRenderAssetPlugin负责将Mesh资源转化为RenderMesh。
+
+MeshMaterial2d存储的ColorMaterial的句柄，MeshMaterial2d指向的材质数据存储在ColorMaterial资源中。 Material2dPlugin负责处理类似ColorMaterial的资源。它将ColorMaterial转换为PreparedMaterial2d。
