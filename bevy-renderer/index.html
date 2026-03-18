@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+      <meta http-equiv="X-UA-Compatible" content="IE=edge">
+      <meta http-equiv="content-type" content="text/html; charset=utf-8">
+
+      <!-- Enable responsiveness on mobile devices-->
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    
+      
+    
+
+      <title> - 从零开始渲染器</title>
+
+      
+
+      
+          <script src="https://cdnjs.cloudflare.com/ajax/libs/slideout/1.0.1/slideout.min.js"></script>
+          
+      
+
+      
+          <link rel="stylesheet" href="https://zuiyu1998.github.io/site.css">
+          
+      
+
+      
+      
+    </head>
+
+    <body>
+        <div class="container">
+
+            <div id="mobile-navbar" class="mobile-navbar">
+              <div class="mobile-header-logo">
+                <a href="https:&#x2F;&#x2F;zuiyu1998.github.io&#x2F;" class="logo">zuiyu&#x27;s blog</a>
+              </div>
+              <div class="mobile-navbar-icon icon-out">
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+            </div>
+
+            <nav id="mobile-menu" class="mobile-menu slideout-menu slideout-menu-left">
+              <ul class="mobile-menu-list">
+                
+                    <li class="mobile-menu-item">
+                        <a href="https:&#x2F;&#x2F;zuiyu1998.github.io&#x2F;">
+                            首页
+                        </a>
+                    </li>
+                
+                    <li class="mobile-menu-item">
+                        <a href="https:&#x2F;&#x2F;zuiyu1998.github.io&#x2F;&#x2F;tags">
+                            标签
+                        </a>
+                    </li>
+                
+              </ul>
+            </nav>
+
+            <header id="header">
+                <div class="logo"><a href="https:&#x2F;&#x2F;zuiyu1998.github.io&#x2F;">zuiyu&#x27;s blog</a></div>
+                <nav class="menu">
+                    <ul>
+                        
+                            <li>
+                                <a href="https:&#x2F;&#x2F;zuiyu1998.github.io&#x2F;">
+                                    首页
+                                </a>
+                            </li>
+                        
+                            <li>
+                                <a href="https:&#x2F;&#x2F;zuiyu1998.github.io&#x2F;&#x2F;tags">
+                                    标签
+                                </a>
+                            </li>
+                        
+                    </ul>
+                </nav>
+            </header>
+
+            <main>
+                <div class="content" id="mobile-panel">
+                    
+
+
+<div class="post-toc" id="post-toc">
+    <h2 class="post-toc-title">Contents</h2>
+    <div class="post-toc-content always-active">
+        <nav id="TableOfContents">
+            <ul>
+                
+                <li>
+                    <a href="https://zuiyu1998.github.io/bevy-renderer/#xuan-ran-qi" class="toc-link">渲染器</a>
+                    
+                </li>
+                
+                <li>
+                    <a href="https://zuiyu1998.github.io/bevy-renderer/#yi-ban-liu-cheng" class="toc-link">一般流程</a>
+                    
+                </li>
+                
+                <li>
+                    <a href="https://zuiyu1998.github.io/bevy-renderer/#ju-ti-fang-an-fen-xi-bevy-2d-render" class="toc-link">具体方案分析（bevy 2d render）</a>
+                    
+                </li>
+                
+            </ul>
+        </nav>
+    </div>
+</div>
+
+
+<article class="post">
+    
+    <header class="post__header">
+        <h1 class="post__title">
+            <a href="https:&#x2F;&#x2F;zuiyu1998.github.io&#x2F;bevy-renderer&#x2F;">从零开始渲染器</a>
+        </h1>
+        <div class="post__meta">
+            <span class="post__time">2026-03-17</span>
+            
+        </div>
+    </header>
+
+    <div class="post-content">
+      <p>从零开始渲染器.</p>
+<span id="continue-reading"></span>
+<h1 id="xuan-ran-qi">渲染器</h1>
+<p>渲染器接收游戏世界中的所有数据，然后计算出每一帧最终显示在屏幕上的每个像素的颜色。
+这些数据如下:</p>
+<ul>
+<li>几何体：所有物体的形状（如角色、建筑、地形的三角形网格）。</li>
+<li>材质与纹理：物体的表面外观，比如颜色、粗糙度、金属感，以及贴在表面的图片（纹理）。</li>
+<li>光照：各种光源（太阳、灯光、火焰）的位置、颜色和强度。</li>
+<li>摄像机：观察者的位置、角度和视野范围。</li>
+</ul>
+<h1 id="yi-ban-liu-cheng">一般流程</h1>
+<p>核心步骤可以简化为：</p>
+<ul>
+<li>可见性判断（剔除）：首先，渲染器会快速判断哪些物体在摄像机视野内，哪些被遮挡看不见。看不见的物体直接跳过，不浪费计算资源。</li>
+<li>光栅化：将3D物体的几何形状（由数学描述的三角形）转换为屏幕上的像素点。这一步确定了每个物体覆盖了哪些屏幕像素。</li>
+<li>着色：对每个像素计算最终的颜色。这需要考虑物体的材质、光照方向、阴影、以及可能的环境反射等。这是决定画质最关键的步骤。</li>
+<li>后期处理：在得到基础图像后，渲染器还会添加各种全屏特效，如抗锯齿（让边缘更平滑）、景深（背景模糊）、泛光（亮光溢出）等，让画面更电影化。</li>
+</ul>
+<h1 id="ju-ti-fang-an-fen-xi-bevy-2d-render">具体方案分析（bevy 2d render）</h1>
+<p>以bevy的 2d render作为案例，深入解析是如何实现渲染器的。</p>
+
+    </div>
+
+    
+    
+
+    <div class="post-footer">
+        
+            
+                <div class="post-tags">
+                    
+                        <a href="https://zuiyu1998.github.io/tags/renderer/">#renderer</a>
+                    
+                        <a href="https://zuiyu1998.github.io/tags/rust/">#rust</a>
+                    
+                        <a href="https://zuiyu1998.github.io/tags/wgpu/">#wgpu</a>
+                    
+                        <a href="https://zuiyu1998.github.io/tags/bevy/">#bevy</a>
+                    
+                </div>
+            
+            
+                <div class="post-nav">
+                    
+                    
+                        <a class="next" href="https:&#x2F;&#x2F;zuiyu1998.github.io&#x2F;godot-2d-renderer&#x2F;">godot 2d renderer ›</a>
+                    
+                </div>
+            
+
+        
+
+    </div>
+
+    
+    
+</article>
+
+
+                </div>
+            </main>
+
+            
+            
+        </div>
+
+      
+          <script type="text/javascript" src="https://zuiyu1998.github.io/even.js" ></script>
+      
+    </body>
+
+</html>
