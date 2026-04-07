@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+      <meta http-equiv="X-UA-Compatible" content="IE=edge">
+      <meta http-equiv="content-type" content="text/html; charset=utf-8">
+
+      <!-- Enable responsiveness on mobile devices-->
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    
+      
+    
+
+      <title> - 从零开始bevy渲染器设计-01-具体案例</title>
+
+      
+
+      
+          <script src="https://cdnjs.cloudflare.com/ajax/libs/slideout/1.0.1/slideout.min.js"></script>
+          
+      
+
+      
+          <link rel="stylesheet" href="https://zuiyu1998.github.io/site.css">
+          
+      
+
+      
+      
+    </head>
+
+    <body>
+        <div class="container">
+
+            <div id="mobile-navbar" class="mobile-navbar">
+              <div class="mobile-header-logo">
+                <a href="https:&#x2F;&#x2F;zuiyu1998.github.io&#x2F;" class="logo">zuiyu&#x27;s blog</a>
+              </div>
+              <div class="mobile-navbar-icon icon-out">
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+            </div>
+
+            <nav id="mobile-menu" class="mobile-menu slideout-menu slideout-menu-left">
+              <ul class="mobile-menu-list">
+                
+                    <li class="mobile-menu-item">
+                        <a href="https:&#x2F;&#x2F;zuiyu1998.github.io&#x2F;">
+                            首页
+                        </a>
+                    </li>
+                
+                    <li class="mobile-menu-item">
+                        <a href="https:&#x2F;&#x2F;zuiyu1998.github.io&#x2F;&#x2F;tags">
+                            标签
+                        </a>
+                    </li>
+                
+              </ul>
+            </nav>
+
+            <header id="header">
+                <div class="logo"><a href="https:&#x2F;&#x2F;zuiyu1998.github.io&#x2F;">zuiyu&#x27;s blog</a></div>
+                <nav class="menu">
+                    <ul>
+                        
+                            <li>
+                                <a href="https:&#x2F;&#x2F;zuiyu1998.github.io&#x2F;">
+                                    首页
+                                </a>
+                            </li>
+                        
+                            <li>
+                                <a href="https:&#x2F;&#x2F;zuiyu1998.github.io&#x2F;&#x2F;tags">
+                                    标签
+                                </a>
+                            </li>
+                        
+                    </ul>
+                </nav>
+            </header>
+
+            <main>
+                <div class="content" id="mobile-panel">
+                    
+
+
+<div class="post-toc" id="post-toc">
+    <h2 class="post-toc-title">Contents</h2>
+    <div class="post-toc-content always-active">
+        <nav id="TableOfContents">
+            <ul>
+                
+                <li>
+                    <a href="https://zuiyu1998.github.io/bevy-renderer-01/#dai-ma" class="toc-link">代码</a>
+                    
+                </li>
+                
+                <li>
+                    <a href="https://zuiyu1998.github.io/bevy-renderer-01/#colormaterial" class="toc-link">ColorMaterial</a>
+                    
+                </li>
+                
+            </ul>
+        </nav>
+    </div>
+</div>
+
+
+<article class="post">
+    
+    <header class="post__header">
+        <h1 class="post__title">
+            <a href="https:&#x2F;&#x2F;zuiyu1998.github.io&#x2F;bevy-renderer-01&#x2F;">从零开始bevy渲染器设计-01-具体案例</a>
+        </h1>
+        <div class="post__meta">
+            <span class="post__time">2026-04-07</span>
+            
+        </div>
+    </header>
+
+    <div class="post-content">
+      <p>从零开始渲染器-01.
+分析bevy引擎的具体案例。确认几何体，材质与纹理，光照，摄像机等对象。</p>
+<span id="continue-reading"></span>
+<h1 id="dai-ma">代码</h1>
+<p>bevy examples下关于shapes的案例如下:</p>
+<pre class="giallo" style="color: #CDD6F4; background-color: #1E1E2E;"><code data-lang="rust"><span class="giallo-l"><span style="color: #F9E2AF;font-style: italic;">#</span><span style="color: #9399B2;">[</span><span style="color: #F9E2AF;font-style: italic;">cfg</span><span style="color: #9399B2;">(</span><span style="color: #F9E2AF;font-style: italic;">not</span><span style="color: #9399B2;">(</span><span style="color: #F9E2AF;font-style: italic;">target_arch </span><span style="color: #94E2D5;">=</span><span style="color: #A6E3A1;"> &quot;wasm32&quot;</span><span style="color: #9399B2;">))]</span></span>
+<span class="giallo-l"><span style="color: #CBA6F7;">use</span><span style="color: #F9E2AF;"> bevy</span><span style="color: #94E2D5;">::</span><span style="color: #9399B2;">{</span></span>
+<span class="giallo-l"><span style="color: #F9E2AF;">    input</span><span style="color: #94E2D5;">::</span><span style="color: #F9E2AF;">common_conditions</span><span style="color: #94E2D5;">::</span><span>input_just_pressed</span><span style="color: #9399B2;">,</span></span>
+<span class="giallo-l"><span style="color: #F9E2AF;">    sprite_render</span><span style="color: #94E2D5;">::</span><span style="color: #9399B2;">{</span><span style="color: #F9E2AF;font-style: italic;">Wireframe2dConfig</span><span style="color: #9399B2;">,</span><span style="color: #F9E2AF;font-style: italic;"> Wireframe2dPlugin</span><span style="color: #9399B2;">},</span></span>
+<span class="giallo-l"><span style="color: #9399B2;">};</span></span>
+<span class="giallo-l"><span style="color: #CBA6F7;">use</span><span style="color: #F9E2AF;"> bevy</span><span style="color: #94E2D5;">::</span><span style="color: #9399B2;">{</span><span style="color: #F9E2AF;">input</span><span style="color: #94E2D5;">::</span><span style="color: #F9E2AF;">common_conditions</span><span style="color: #94E2D5;">::</span><span>input_toggle_active</span><span style="color: #9399B2;">,</span><span style="color: #F9E2AF;"> prelude</span><span style="color: #94E2D5;">::*</span><span style="color: #9399B2;">};</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span style="color: #CBA6F7;">fn</span><span style="color: #89B4FA;font-style: italic;"> main</span><span style="color: #9399B2;">() {</span></span>
+<span class="giallo-l"><span style="color: #CBA6F7;">    let mut</span><span> app</span><span style="color: #94E2D5;"> =</span><span style="color: #F9E2AF;font-style: italic;"> App</span><span style="color: #94E2D5;">::</span><span style="color: #89B4FA;font-style: italic;">new</span><span style="color: #9399B2;">();</span></span>
+<span class="giallo-l"><span>    app</span><span style="color: #94E2D5;">.</span><span style="color: #89B4FA;font-style: italic;">add_plugins</span><span style="color: #9399B2;">((</span></span>
+<span class="giallo-l"><span style="color: #F9E2AF;font-style: italic;">        DefaultPlugins</span><span style="color: #9399B2;">,</span></span>
+<span class="giallo-l"><span style="color: #F9E2AF;font-style: italic;">        #</span><span style="color: #9399B2;">[</span><span style="color: #F9E2AF;font-style: italic;">cfg</span><span style="color: #9399B2;">(</span><span style="color: #F9E2AF;font-style: italic;">not</span><span style="color: #9399B2;">(</span><span style="color: #F9E2AF;font-style: italic;">target_arch </span><span style="color: #94E2D5;">=</span><span style="color: #A6E3A1;"> &quot;wasm32&quot;</span><span style="color: #9399B2;">))]</span></span>
+<span class="giallo-l"><span style="color: #F9E2AF;">        Wireframe2dPlugin</span><span style="color: #94E2D5;">::</span><span style="color: #89B4FA;font-style: italic;">default</span><span style="color: #9399B2;">(),</span></span>
+<span class="giallo-l"><span style="color: #9399B2;">    ))</span></span>
+<span class="giallo-l"><span style="color: #94E2D5;">    .</span><span style="color: #89B4FA;font-style: italic;">add_systems</span><span style="color: #9399B2;">(</span><span style="color: #F9E2AF;font-style: italic;">Startup</span><span style="color: #9399B2;">,</span><span> setup</span><span style="color: #9399B2;">);</span></span>
+<span class="giallo-l"><span style="color: #F9E2AF;font-style: italic;">    #</span><span style="color: #9399B2;">[</span><span style="color: #F9E2AF;font-style: italic;">cfg</span><span style="color: #9399B2;">(</span><span style="color: #F9E2AF;font-style: italic;">not</span><span style="color: #9399B2;">(</span><span style="color: #F9E2AF;font-style: italic;">target_arch </span><span style="color: #94E2D5;">=</span><span style="color: #A6E3A1;"> &quot;wasm32&quot;</span><span style="color: #9399B2;">))]</span></span>
+<span class="giallo-l"><span>    app</span><span style="color: #94E2D5;">.</span><span style="color: #89B4FA;font-style: italic;">add_systems</span><span style="color: #9399B2;">(</span></span>
+<span class="giallo-l"><span style="color: #F9E2AF;font-style: italic;">        Update</span><span style="color: #9399B2;">,</span></span>
+<span class="giallo-l"><span>        toggle_wireframe</span><span style="color: #94E2D5;">.</span><span style="color: #89B4FA;font-style: italic;">run_if</span><span style="color: #9399B2;">(</span><span style="color: #89B4FA;font-style: italic;">input_just_pressed</span><span style="color: #9399B2;">(</span><span style="color: #F9E2AF;">KeyCode</span><span style="color: #94E2D5;">::</span><span style="color: #F9E2AF;font-style: italic;">Space</span><span style="color: #9399B2;">)),</span></span>
+<span class="giallo-l"><span style="color: #9399B2;">    );</span></span>
+<span class="giallo-l"><span>    app</span><span style="color: #94E2D5;">.</span><span style="color: #89B4FA;font-style: italic;">add_systems</span><span style="color: #9399B2;">(</span></span>
+<span class="giallo-l"><span style="color: #F9E2AF;font-style: italic;">        Update</span><span style="color: #9399B2;">,</span></span>
+<span class="giallo-l"><span>        rotate</span><span style="color: #94E2D5;">.</span><span style="color: #89B4FA;font-style: italic;">run_if</span><span style="color: #9399B2;">(</span><span style="color: #89B4FA;font-style: italic;">input_toggle_active</span><span style="color: #9399B2;">(</span><span style="color: #F38BA8;">false</span><span style="color: #9399B2;">,</span><span style="color: #F9E2AF;"> KeyCode</span><span style="color: #94E2D5;">::</span><span style="color: #F9E2AF;font-style: italic;">KeyR</span><span style="color: #9399B2;">)),</span></span>
+<span class="giallo-l"><span style="color: #9399B2;">    );</span></span>
+<span class="giallo-l"><span>    app</span><span style="color: #94E2D5;">.</span><span style="color: #89B4FA;font-style: italic;">run</span><span style="color: #9399B2;">();</span></span>
+<span class="giallo-l"><span style="color: #9399B2;">}</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span style="color: #CBA6F7;">const</span><span style="color: #FAB387;"> X_EXTENT</span><span style="color: #94E2D5;">:</span><span style="color: #CBA6F7;"> f32</span><span style="color: #94E2D5;"> =</span><span style="color: #FAB387;"> 1000</span><span style="color: #94E2D5;">.</span><span style="color: #9399B2;">;</span></span>
+<span class="giallo-l"><span style="color: #CBA6F7;">const</span><span style="color: #FAB387;"> Y_EXTENT</span><span style="color: #94E2D5;">:</span><span style="color: #CBA6F7;"> f32</span><span style="color: #94E2D5;"> =</span><span style="color: #FAB387;"> 150</span><span style="color: #94E2D5;">.</span><span style="color: #9399B2;">;</span></span>
+<span class="giallo-l"><span style="color: #CBA6F7;">const</span><span style="color: #FAB387;"> THICKNESS</span><span style="color: #94E2D5;">:</span><span style="color: #CBA6F7;"> f32</span><span style="color: #94E2D5;"> =</span><span style="color: #FAB387;"> 5</span><span style="color: #9399B2;">.</span><span style="color: #FAB387;">0</span><span style="color: #9399B2;">;</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span style="color: #CBA6F7;">fn</span><span style="color: #89B4FA;font-style: italic;"> setup</span><span style="color: #9399B2;">(</span></span>
+<span class="giallo-l"><span style="color: #CBA6F7;">    mut</span><span style="color: #EBA0AC;"> commands</span><span style="color: #94E2D5;">:</span><span style="color: #F9E2AF;font-style: italic;"> Commands</span><span style="color: #9399B2;">,</span></span>
+<span class="giallo-l"><span style="color: #CBA6F7;">    mut</span><span style="color: #EBA0AC;"> meshes</span><span style="color: #94E2D5;">:</span><span style="color: #F9E2AF;font-style: italic;"> ResMut</span><span style="color: #89DCEB;">&lt;</span><span style="color: #F9E2AF;font-style: italic;">Assets</span><span style="color: #89DCEB;">&lt;</span><span style="color: #F9E2AF;font-style: italic;">Mesh</span><span style="color: #89DCEB;">&gt;&gt;</span><span style="color: #9399B2;">,</span></span>
+<span class="giallo-l"><span style="color: #CBA6F7;">    mut</span><span style="color: #EBA0AC;"> materials</span><span style="color: #94E2D5;">:</span><span style="color: #F9E2AF;font-style: italic;"> ResMut</span><span style="color: #89DCEB;">&lt;</span><span style="color: #F9E2AF;font-style: italic;">Assets</span><span style="color: #89DCEB;">&lt;</span><span style="color: #F9E2AF;font-style: italic;">ColorMaterial</span><span style="color: #89DCEB;">&gt;&gt;</span><span style="color: #9399B2;">,</span></span>
+<span class="giallo-l"><span style="color: #9399B2;">) {</span></span>
+<span class="giallo-l"><span>    commands</span><span style="color: #94E2D5;">.</span><span style="color: #89B4FA;font-style: italic;">spawn</span><span style="color: #9399B2;">(</span><span style="color: #F9E2AF;font-style: italic;">Camera2d</span><span style="color: #9399B2;">);</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span style="color: #CBA6F7;">    let</span><span> shapes</span><span style="color: #94E2D5;"> =</span><span style="color: #9399B2;"> [</span></span>
+<span class="giallo-l"><span>        meshes</span><span style="color: #94E2D5;">.</span><span style="color: #89B4FA;font-style: italic;">add</span><span style="color: #9399B2;">(</span><span style="color: #F9E2AF;">Circle</span><span style="color: #94E2D5;">::</span><span style="color: #89B4FA;font-style: italic;">new</span><span style="color: #9399B2;">(</span><span style="color: #FAB387;">50</span><span style="color: #9399B2;">.</span><span style="color: #FAB387;">0</span><span style="color: #9399B2;">)),</span></span>
+<span class="giallo-l"><span>        meshes</span><span style="color: #94E2D5;">.</span><span style="color: #89B4FA;font-style: italic;">add</span><span style="color: #9399B2;">(</span><span style="color: #F9E2AF;">CircularSector</span><span style="color: #94E2D5;">::</span><span style="color: #89B4FA;font-style: italic;">new</span><span style="color: #9399B2;">(</span><span style="color: #FAB387;">50</span><span style="color: #9399B2;">.</span><span style="color: #FAB387;">0</span><span style="color: #9399B2;">,</span><span style="color: #FAB387;"> 1</span><span style="color: #9399B2;">.</span><span style="color: #FAB387;">0</span><span style="color: #9399B2;">)),</span></span>
+<span class="giallo-l"><span>        meshes</span><span style="color: #94E2D5;">.</span><span style="color: #89B4FA;font-style: italic;">add</span><span style="color: #9399B2;">(</span><span style="color: #F9E2AF;">CircularSegment</span><span style="color: #94E2D5;">::</span><span style="color: #89B4FA;font-style: italic;">new</span><span style="color: #9399B2;">(</span><span style="color: #FAB387;">50</span><span style="color: #9399B2;">.</span><span style="color: #FAB387;">0</span><span style="color: #9399B2;">,</span><span style="color: #FAB387;"> 1</span><span style="color: #9399B2;">.</span><span style="color: #FAB387;">25</span><span style="color: #9399B2;">)),</span></span>
+<span class="giallo-l"><span>        meshes</span><span style="color: #94E2D5;">.</span><span style="color: #89B4FA;font-style: italic;">add</span><span style="color: #9399B2;">(</span><span style="color: #F9E2AF;">Ellipse</span><span style="color: #94E2D5;">::</span><span style="color: #89B4FA;font-style: italic;">new</span><span style="color: #9399B2;">(</span><span style="color: #FAB387;">25</span><span style="color: #9399B2;">.</span><span style="color: #FAB387;">0</span><span style="color: #9399B2;">,</span><span style="color: #FAB387;"> 50</span><span style="color: #9399B2;">.</span><span style="color: #FAB387;">0</span><span style="color: #9399B2;">)),</span></span>
+<span class="giallo-l"><span>        meshes</span><span style="color: #94E2D5;">.</span><span style="color: #89B4FA;font-style: italic;">add</span><span style="color: #9399B2;">(</span><span style="color: #F9E2AF;">Annulus</span><span style="color: #94E2D5;">::</span><span style="color: #89B4FA;font-style: italic;">new</span><span style="color: #9399B2;">(</span><span style="color: #FAB387;">25</span><span style="color: #9399B2;">.</span><span style="color: #FAB387;">0</span><span style="color: #9399B2;">,</span><span style="color: #FAB387;"> 50</span><span style="color: #9399B2;">.</span><span style="color: #FAB387;">0</span><span style="color: #9399B2;">)),</span></span>
+<span class="giallo-l"><span>        meshes</span><span style="color: #94E2D5;">.</span><span style="color: #89B4FA;font-style: italic;">add</span><span style="color: #9399B2;">(</span><span style="color: #F9E2AF;">Capsule2d</span><span style="color: #94E2D5;">::</span><span style="color: #89B4FA;font-style: italic;">new</span><span style="color: #9399B2;">(</span><span style="color: #FAB387;">25</span><span style="color: #9399B2;">.</span><span style="color: #FAB387;">0</span><span style="color: #9399B2;">,</span><span style="color: #FAB387;"> 50</span><span style="color: #9399B2;">.</span><span style="color: #FAB387;">0</span><span style="color: #9399B2;">)),</span></span>
+<span class="giallo-l"><span>        meshes</span><span style="color: #94E2D5;">.</span><span style="color: #89B4FA;font-style: italic;">add</span><span style="color: #9399B2;">(</span><span style="color: #F9E2AF;">Rhombus</span><span style="color: #94E2D5;">::</span><span style="color: #89B4FA;font-style: italic;">new</span><span style="color: #9399B2;">(</span><span style="color: #FAB387;">75</span><span style="color: #9399B2;">.</span><span style="color: #FAB387;">0</span><span style="color: #9399B2;">,</span><span style="color: #FAB387;"> 100</span><span style="color: #9399B2;">.</span><span style="color: #FAB387;">0</span><span style="color: #9399B2;">)),</span></span>
+<span class="giallo-l"><span>        meshes</span><span style="color: #94E2D5;">.</span><span style="color: #89B4FA;font-style: italic;">add</span><span style="color: #9399B2;">(</span><span style="color: #F9E2AF;">Rectangle</span><span style="color: #94E2D5;">::</span><span style="color: #89B4FA;font-style: italic;">new</span><span style="color: #9399B2;">(</span><span style="color: #FAB387;">50</span><span style="color: #9399B2;">.</span><span style="color: #FAB387;">0</span><span style="color: #9399B2;">,</span><span style="color: #FAB387;"> 100</span><span style="color: #9399B2;">.</span><span style="color: #FAB387;">0</span><span style="color: #9399B2;">)),</span></span>
+<span class="giallo-l"><span>        meshes</span><span style="color: #94E2D5;">.</span><span style="color: #89B4FA;font-style: italic;">add</span><span style="color: #9399B2;">(</span><span style="color: #F9E2AF;">RegularPolygon</span><span style="color: #94E2D5;">::</span><span style="color: #89B4FA;font-style: italic;">new</span><span style="color: #9399B2;">(</span><span style="color: #FAB387;">50</span><span style="color: #9399B2;">.</span><span style="color: #FAB387;">0</span><span style="color: #9399B2;">,</span><span style="color: #FAB387;"> 6</span><span style="color: #9399B2;">)),</span></span>
+<span class="giallo-l"><span>        meshes</span><span style="color: #94E2D5;">.</span><span style="color: #89B4FA;font-style: italic;">add</span><span style="color: #9399B2;">(</span><span style="color: #F9E2AF;">Triangle2d</span><span style="color: #94E2D5;">::</span><span style="color: #89B4FA;font-style: italic;">new</span><span style="color: #9399B2;">(</span></span>
+<span class="giallo-l"><span style="color: #F9E2AF;">            Vec2</span><span style="color: #94E2D5;">::</span><span style="color: #F9E2AF;font-style: italic;">Y</span><span style="color: #94E2D5;"> *</span><span style="color: #FAB387;"> 50</span><span style="color: #9399B2;">.</span><span style="color: #FAB387;">0</span><span style="color: #9399B2;">,</span></span>
+<span class="giallo-l"><span style="color: #F9E2AF;">            Vec2</span><span style="color: #94E2D5;">::</span><span style="color: #89B4FA;font-style: italic;">new</span><span style="color: #9399B2;">(</span><span style="color: #94E2D5;">-</span><span style="color: #FAB387;">50</span><span style="color: #9399B2;">.</span><span style="color: #FAB387;">0</span><span style="color: #9399B2;">,</span><span style="color: #94E2D5;"> -</span><span style="color: #FAB387;">50</span><span style="color: #9399B2;">.</span><span style="color: #FAB387;">0</span><span style="color: #9399B2;">),</span></span>
+<span class="giallo-l"><span style="color: #F9E2AF;">            Vec2</span><span style="color: #94E2D5;">::</span><span style="color: #89B4FA;font-style: italic;">new</span><span style="color: #9399B2;">(</span><span style="color: #FAB387;">50</span><span style="color: #9399B2;">.</span><span style="color: #FAB387;">0</span><span style="color: #9399B2;">,</span><span style="color: #94E2D5;"> -</span><span style="color: #FAB387;">50</span><span style="color: #9399B2;">.</span><span style="color: #FAB387;">0</span><span style="color: #9399B2;">),</span></span>
+<span class="giallo-l"><span style="color: #9399B2;">        )),</span></span>
+<span class="giallo-l"><span>        meshes</span><span style="color: #94E2D5;">.</span><span style="color: #89B4FA;font-style: italic;">add</span><span style="color: #9399B2;">(</span><span style="color: #F9E2AF;">Segment2d</span><span style="color: #94E2D5;">::</span><span style="color: #89B4FA;font-style: italic;">new</span><span style="color: #9399B2;">(</span></span>
+<span class="giallo-l"><span style="color: #F9E2AF;">            Vec2</span><span style="color: #94E2D5;">::</span><span style="color: #89B4FA;font-style: italic;">new</span><span style="color: #9399B2;">(</span><span style="color: #94E2D5;">-</span><span style="color: #FAB387;">50</span><span style="color: #9399B2;">.</span><span style="color: #FAB387;">0</span><span style="color: #9399B2;">,</span><span style="color: #FAB387;"> 50</span><span style="color: #9399B2;">.</span><span style="color: #FAB387;">0</span><span style="color: #9399B2;">),</span></span>
+<span class="giallo-l"><span style="color: #F9E2AF;">            Vec2</span><span style="color: #94E2D5;">::</span><span style="color: #89B4FA;font-style: italic;">new</span><span style="color: #9399B2;">(</span><span style="color: #FAB387;">50</span><span style="color: #9399B2;">.</span><span style="color: #FAB387;">0</span><span style="color: #9399B2;">,</span><span style="color: #94E2D5;"> -</span><span style="color: #FAB387;">50</span><span style="color: #9399B2;">.</span><span style="color: #FAB387;">0</span><span style="color: #9399B2;">),</span></span>
+<span class="giallo-l"><span style="color: #9399B2;">        )),</span></span>
+<span class="giallo-l"><span>        meshes</span><span style="color: #94E2D5;">.</span><span style="color: #89B4FA;font-style: italic;">add</span><span style="color: #9399B2;">(</span><span style="color: #F9E2AF;">Polyline2d</span><span style="color: #94E2D5;">::</span><span style="color: #89B4FA;font-style: italic;">new</span><span style="color: #9399B2;">(</span><span style="color: #89B4FA;font-style: italic;">vec!</span><span style="color: #9399B2;">[</span></span>
+<span class="giallo-l"><span style="color: #F9E2AF;">            Vec2</span><span style="color: #94E2D5;">::</span><span style="color: #89B4FA;font-style: italic;">new</span><span style="color: #9399B2;">(</span><span style="color: #94E2D5;">-</span><span style="color: #FAB387;">50</span><span style="color: #9399B2;">.</span><span style="color: #FAB387;">0</span><span style="color: #9399B2;">,</span><span style="color: #FAB387;"> 50</span><span style="color: #9399B2;">.</span><span style="color: #FAB387;">0</span><span style="color: #9399B2;">),</span></span>
+<span class="giallo-l"><span style="color: #F9E2AF;">            Vec2</span><span style="color: #94E2D5;">::</span><span style="color: #89B4FA;font-style: italic;">new</span><span style="color: #9399B2;">(</span><span style="color: #FAB387;">0</span><span style="color: #9399B2;">.</span><span style="color: #FAB387;">0</span><span style="color: #9399B2;">,</span><span style="color: #94E2D5;"> -</span><span style="color: #FAB387;">50</span><span style="color: #9399B2;">.</span><span style="color: #FAB387;">0</span><span style="color: #9399B2;">),</span></span>
+<span class="giallo-l"><span style="color: #F9E2AF;">            Vec2</span><span style="color: #94E2D5;">::</span><span style="color: #89B4FA;font-style: italic;">new</span><span style="color: #9399B2;">(</span><span style="color: #FAB387;">50</span><span style="color: #9399B2;">.</span><span style="color: #FAB387;">0</span><span style="color: #9399B2;">,</span><span style="color: #FAB387;"> 50</span><span style="color: #9399B2;">.</span><span style="color: #FAB387;">0</span><span style="color: #9399B2;">),</span></span>
+<span class="giallo-l"><span style="color: #9399B2;">        ])),</span></span>
+<span class="giallo-l"><span style="color: #9399B2;">    ];</span></span>
+<span class="giallo-l"><span style="color: #CBA6F7;">    let</span><span> num_shapes</span><span style="color: #94E2D5;"> =</span><span> shapes</span><span style="color: #94E2D5;">.</span><span style="color: #89B4FA;font-style: italic;">len</span><span style="color: #9399B2;">();</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span style="color: #CBA6F7;">    for</span><span style="color: #9399B2;"> (</span><span>i</span><span style="color: #9399B2;">,</span><span> shape</span><span style="color: #9399B2;">)</span><span style="color: #CBA6F7;"> in</span><span> shapes</span><span style="color: #94E2D5;">.</span><span style="color: #89B4FA;font-style: italic;">into_iter</span><span style="color: #9399B2;">()</span><span style="color: #94E2D5;">.</span><span style="color: #89B4FA;font-style: italic;">enumerate</span><span style="color: #9399B2;">() {</span></span>
+<span class="giallo-l"><span style="color: #9399B2;font-style: italic;">        // Distribute colors evenly across the rainbow.</span></span>
+<span class="giallo-l"><span style="color: #CBA6F7;">        let</span><span> color</span><span style="color: #94E2D5;"> =</span><span style="color: #F9E2AF;font-style: italic;"> Color</span><span style="color: #94E2D5;">::</span><span style="color: #89B4FA;font-style: italic;">hsl</span><span style="color: #9399B2;">(</span><span style="color: #FAB387;">360</span><span style="color: #94E2D5;">. *</span><span> i</span><span style="color: #CBA6F7;"> as f32</span><span style="color: #94E2D5;"> /</span><span> num_shapes</span><span style="color: #CBA6F7;"> as f32</span><span style="color: #9399B2;">,</span><span style="color: #FAB387;"> 0</span><span style="color: #9399B2;">.</span><span style="color: #FAB387;">95</span><span style="color: #9399B2;">,</span><span style="color: #FAB387;"> 0</span><span style="color: #9399B2;">.</span><span style="color: #FAB387;">7</span><span style="color: #9399B2;">);</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span>        commands</span><span style="color: #94E2D5;">.</span><span style="color: #89B4FA;font-style: italic;">spawn</span><span style="color: #9399B2;">((</span></span>
+<span class="giallo-l"><span style="color: #89B4FA;font-style: italic;">            Mesh2d</span><span style="color: #9399B2;">(</span><span>shape</span><span style="color: #9399B2;">),</span></span>
+<span class="giallo-l"><span style="color: #89B4FA;font-style: italic;">            MeshMaterial2d</span><span style="color: #9399B2;">(</span><span>materials</span><span style="color: #94E2D5;">.</span><span style="color: #89B4FA;font-style: italic;">add</span><span style="color: #9399B2;">(</span><span>color</span><span style="color: #9399B2;">)),</span></span>
+<span class="giallo-l"><span style="color: #F9E2AF;">            Transform</span><span style="color: #94E2D5;">::</span><span style="color: #89B4FA;font-style: italic;">from_xyz</span><span style="color: #9399B2;">(</span></span>
+<span class="giallo-l"><span style="color: #9399B2;font-style: italic;">                // Distribute shapes from -X_EXTENT/2 to +X_EXTENT/2.</span></span>
+<span class="giallo-l"><span style="color: #94E2D5;">                -</span><span style="color: #F9E2AF;font-style: italic;">X_EXTENT</span><span style="color: #94E2D5;"> /</span><span style="color: #FAB387;"> 2</span><span style="color: #94E2D5;">. +</span><span> i</span><span style="color: #CBA6F7;"> as f32</span><span style="color: #94E2D5;"> /</span><span style="color: #9399B2;"> (</span><span>num_shapes</span><span style="color: #94E2D5;"> -</span><span style="color: #FAB387;"> 1</span><span style="color: #9399B2;">)</span><span style="color: #CBA6F7;"> as f32</span><span style="color: #94E2D5;"> *</span><span style="color: #F9E2AF;font-style: italic;"> X_EXTENT</span><span style="color: #9399B2;">,</span></span>
+<span class="giallo-l"><span style="color: #F9E2AF;font-style: italic;">                Y_EXTENT</span><span style="color: #94E2D5;"> /</span><span style="color: #FAB387;"> 2</span><span style="color: #94E2D5;">.</span><span style="color: #9399B2;">,</span></span>
+<span class="giallo-l"><span style="color: #FAB387;">                0</span><span style="color: #9399B2;">.</span><span style="color: #FAB387;">0</span><span style="color: #9399B2;">,</span></span>
+<span class="giallo-l"><span style="color: #9399B2;">            ),</span></span>
+<span class="giallo-l"><span style="color: #9399B2;">        ));</span></span>
+<span class="giallo-l"><span style="color: #9399B2;">    }</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span style="color: #CBA6F7;">    let</span><span> rings</span><span style="color: #94E2D5;"> =</span><span style="color: #9399B2;"> [</span></span>
+<span class="giallo-l"><span>        meshes</span><span style="color: #94E2D5;">.</span><span style="color: #89B4FA;font-style: italic;">add</span><span style="color: #9399B2;">(</span><span style="color: #F9E2AF;">Circle</span><span style="color: #94E2D5;">::</span><span style="color: #89B4FA;font-style: italic;">new</span><span style="color: #9399B2;">(</span><span style="color: #FAB387;">50</span><span style="color: #9399B2;">.</span><span style="color: #FAB387;">0</span><span style="color: #9399B2;">)</span><span style="color: #94E2D5;">.</span><span style="color: #89B4FA;font-style: italic;">to_ring</span><span style="color: #9399B2;">(</span><span style="color: #FAB387;">THICKNESS</span><span style="color: #9399B2;">)),</span></span>
+<span class="giallo-l"><span style="color: #9399B2;font-style: italic;">        // this visually produces an arc segment but this is not technically accurate</span></span>
+<span class="giallo-l"><span>        meshes</span><span style="color: #94E2D5;">.</span><span style="color: #89B4FA;font-style: italic;">add</span><span style="color: #9399B2;">(</span><span style="color: #F9E2AF;">Ring</span><span style="color: #94E2D5;">::</span><span style="color: #89B4FA;font-style: italic;">new</span><span style="color: #9399B2;">(</span></span>
+<span class="giallo-l"><span style="color: #F9E2AF;">            CircularSector</span><span style="color: #94E2D5;">::</span><span style="color: #89B4FA;font-style: italic;">new</span><span style="color: #9399B2;">(</span><span style="color: #FAB387;">50</span><span style="color: #9399B2;">.</span><span style="color: #FAB387;">0</span><span style="color: #9399B2;">,</span><span style="color: #FAB387;"> 1</span><span style="color: #9399B2;">.</span><span style="color: #FAB387;">0</span><span style="color: #9399B2;">),</span></span>
+<span class="giallo-l"><span style="color: #F9E2AF;">            CircularSector</span><span style="color: #94E2D5;">::</span><span style="color: #89B4FA;font-style: italic;">new</span><span style="color: #9399B2;">(</span><span style="color: #FAB387;">45</span><span style="color: #9399B2;">.</span><span style="color: #FAB387;">0</span><span style="color: #9399B2;">,</span><span style="color: #FAB387;"> 1</span><span style="color: #9399B2;">.</span><span style="color: #FAB387;">0</span><span style="color: #9399B2;">),</span></span>
+<span class="giallo-l"><span style="color: #9399B2;">        )),</span></span>
+<span class="giallo-l"><span>        meshes</span><span style="color: #94E2D5;">.</span><span style="color: #89B4FA;font-style: italic;">add</span><span style="color: #9399B2;">(</span><span style="color: #F9E2AF;">CircularSegment</span><span style="color: #94E2D5;">::</span><span style="color: #89B4FA;font-style: italic;">new</span><span style="color: #9399B2;">(</span><span style="color: #FAB387;">50</span><span style="color: #9399B2;">.</span><span style="color: #FAB387;">0</span><span style="color: #9399B2;">,</span><span style="color: #FAB387;"> 1</span><span style="color: #9399B2;">.</span><span style="color: #FAB387;">25</span><span style="color: #9399B2;">)</span><span style="color: #94E2D5;">.</span><span style="color: #89B4FA;font-style: italic;">to_ring</span><span style="color: #9399B2;">(</span><span style="color: #FAB387;">THICKNESS</span><span style="color: #9399B2;">)),</span></span>
+<span class="giallo-l"><span>        meshes</span><span style="color: #94E2D5;">.</span><span style="color: #89B4FA;font-style: italic;">add</span><span style="color: #9399B2;">({</span></span>
+<span class="giallo-l"><span style="color: #9399B2;font-style: italic;">            // This is an approximation; Ellipse does not implement Inset as concentric ellipses do not have parallel curves</span></span>
+<span class="giallo-l"><span style="color: #CBA6F7;">            let</span><span> outer</span><span style="color: #94E2D5;"> =</span><span style="color: #F9E2AF;"> Ellipse</span><span style="color: #94E2D5;">::</span><span style="color: #89B4FA;font-style: italic;">new</span><span style="color: #9399B2;">(</span><span style="color: #FAB387;">25</span><span style="color: #9399B2;">.</span><span style="color: #FAB387;">0</span><span style="color: #9399B2;">,</span><span style="color: #FAB387;"> 50</span><span style="color: #9399B2;">.</span><span style="color: #FAB387;">0</span><span style="color: #9399B2;">);</span></span>
+<span class="giallo-l"><span style="color: #CBA6F7;">            let mut</span><span> inner</span><span style="color: #94E2D5;"> =</span><span> outer</span><span style="color: #9399B2;">;</span></span>
+<span class="giallo-l"><span>            inner</span><span style="color: #94E2D5;">.</span><span style="color: #89B4FA;">half_size </span><span style="color: #94E2D5;">-=</span><span style="color: #F9E2AF;"> Vec2</span><span style="color: #94E2D5;">::</span><span style="color: #89B4FA;font-style: italic;">splat</span><span style="color: #9399B2;">(</span><span style="color: #FAB387;">THICKNESS</span><span style="color: #9399B2;">);</span></span>
+<span class="giallo-l"><span style="color: #F9E2AF;">            Ring</span><span style="color: #94E2D5;">::</span><span style="color: #89B4FA;font-style: italic;">new</span><span style="color: #9399B2;">(</span><span>outer</span><span style="color: #9399B2;">,</span><span> inner</span><span style="color: #9399B2;">)</span></span>
+<span class="giallo-l"><span style="color: #9399B2;">        }),</span></span>
+<span class="giallo-l"><span style="color: #9399B2;font-style: italic;">        // this is equivalent to the Annulus::new(25.0, 50.0) above</span></span>
+<span class="giallo-l"><span>        meshes</span><span style="color: #94E2D5;">.</span><span style="color: #89B4FA;font-style: italic;">add</span><span style="color: #9399B2;">(</span><span style="color: #F9E2AF;">Ring</span><span style="color: #94E2D5;">::</span><span style="color: #89B4FA;font-style: italic;">new</span><span style="color: #9399B2;">(</span><span style="color: #F9E2AF;">Circle</span><span style="color: #94E2D5;">::</span><span style="color: #89B4FA;font-style: italic;">new</span><span style="color: #9399B2;">(</span><span style="color: #FAB387;">50</span><span style="color: #9399B2;">.</span><span style="color: #FAB387;">0</span><span style="color: #9399B2;">),</span><span style="color: #F9E2AF;"> Circle</span><span style="color: #94E2D5;">::</span><span style="color: #89B4FA;font-style: italic;">new</span><span style="color: #9399B2;">(</span><span style="color: #FAB387;">25</span><span style="color: #9399B2;">.</span><span style="color: #FAB387;">0</span><span style="color: #9399B2;">))),</span></span>
+<span class="giallo-l"><span>        meshes</span><span style="color: #94E2D5;">.</span><span style="color: #89B4FA;font-style: italic;">add</span><span style="color: #9399B2;">(</span><span style="color: #F9E2AF;">Capsule2d</span><span style="color: #94E2D5;">::</span><span style="color: #89B4FA;font-style: italic;">new</span><span style="color: #9399B2;">(</span><span style="color: #FAB387;">25</span><span style="color: #9399B2;">.</span><span style="color: #FAB387;">0</span><span style="color: #9399B2;">,</span><span style="color: #FAB387;"> 50</span><span style="color: #9399B2;">.</span><span style="color: #FAB387;">0</span><span style="color: #9399B2;">)</span><span style="color: #94E2D5;">.</span><span style="color: #89B4FA;font-style: italic;">to_ring</span><span style="color: #9399B2;">(</span><span style="color: #FAB387;">THICKNESS</span><span style="color: #9399B2;">)),</span></span>
+<span class="giallo-l"><span>        meshes</span><span style="color: #94E2D5;">.</span><span style="color: #89B4FA;font-style: italic;">add</span><span style="color: #9399B2;">(</span><span style="color: #F9E2AF;">Rhombus</span><span style="color: #94E2D5;">::</span><span style="color: #89B4FA;font-style: italic;">new</span><span style="color: #9399B2;">(</span><span style="color: #FAB387;">75</span><span style="color: #9399B2;">.</span><span style="color: #FAB387;">0</span><span style="color: #9399B2;">,</span><span style="color: #FAB387;"> 100</span><span style="color: #9399B2;">.</span><span style="color: #FAB387;">0</span><span style="color: #9399B2;">)</span><span style="color: #94E2D5;">.</span><span style="color: #89B4FA;font-style: italic;">to_ring</span><span style="color: #9399B2;">(</span><span style="color: #FAB387;">THICKNESS</span><span style="color: #9399B2;">)),</span></span>
+<span class="giallo-l"><span>        meshes</span><span style="color: #94E2D5;">.</span><span style="color: #89B4FA;font-style: italic;">add</span><span style="color: #9399B2;">(</span><span style="color: #F9E2AF;">Rectangle</span><span style="color: #94E2D5;">::</span><span style="color: #89B4FA;font-style: italic;">new</span><span style="color: #9399B2;">(</span><span style="color: #FAB387;">50</span><span style="color: #9399B2;">.</span><span style="color: #FAB387;">0</span><span style="color: #9399B2;">,</span><span style="color: #FAB387;"> 100</span><span style="color: #9399B2;">.</span><span style="color: #FAB387;">0</span><span style="color: #9399B2;">)</span><span style="color: #94E2D5;">.</span><span style="color: #89B4FA;font-style: italic;">to_ring</span><span style="color: #9399B2;">(</span><span style="color: #FAB387;">THICKNESS</span><span style="color: #9399B2;">)),</span></span>
+<span class="giallo-l"><span>        meshes</span><span style="color: #94E2D5;">.</span><span style="color: #89B4FA;font-style: italic;">add</span><span style="color: #9399B2;">(</span><span style="color: #F9E2AF;">RegularPolygon</span><span style="color: #94E2D5;">::</span><span style="color: #89B4FA;font-style: italic;">new</span><span style="color: #9399B2;">(</span><span style="color: #FAB387;">50</span><span style="color: #9399B2;">.</span><span style="color: #FAB387;">0</span><span style="color: #9399B2;">,</span><span style="color: #FAB387;"> 6</span><span style="color: #9399B2;">)</span><span style="color: #94E2D5;">.</span><span style="color: #89B4FA;font-style: italic;">to_ring</span><span style="color: #9399B2;">(</span><span style="color: #FAB387;">THICKNESS</span><span style="color: #9399B2;">)),</span></span>
+<span class="giallo-l"><span>        meshes</span><span style="color: #94E2D5;">.</span><span style="color: #89B4FA;font-style: italic;">add</span><span style="color: #9399B2;">(</span></span>
+<span class="giallo-l"><span style="color: #F9E2AF;">            Triangle2d</span><span style="color: #94E2D5;">::</span><span style="color: #89B4FA;font-style: italic;">new</span><span style="color: #9399B2;">(</span></span>
+<span class="giallo-l"><span style="color: #F9E2AF;">                Vec2</span><span style="color: #94E2D5;">::</span><span style="color: #F9E2AF;font-style: italic;">Y</span><span style="color: #94E2D5;"> *</span><span style="color: #FAB387;"> 50</span><span style="color: #9399B2;">.</span><span style="color: #FAB387;">0</span><span style="color: #9399B2;">,</span></span>
+<span class="giallo-l"><span style="color: #F9E2AF;">                Vec2</span><span style="color: #94E2D5;">::</span><span style="color: #89B4FA;font-style: italic;">new</span><span style="color: #9399B2;">(</span><span style="color: #94E2D5;">-</span><span style="color: #FAB387;">50</span><span style="color: #9399B2;">.</span><span style="color: #FAB387;">0</span><span style="color: #9399B2;">,</span><span style="color: #94E2D5;"> -</span><span style="color: #FAB387;">50</span><span style="color: #9399B2;">.</span><span style="color: #FAB387;">0</span><span style="color: #9399B2;">),</span></span>
+<span class="giallo-l"><span style="color: #F9E2AF;">                Vec2</span><span style="color: #94E2D5;">::</span><span style="color: #89B4FA;font-style: italic;">new</span><span style="color: #9399B2;">(</span><span style="color: #FAB387;">50</span><span style="color: #9399B2;">.</span><span style="color: #FAB387;">0</span><span style="color: #9399B2;">,</span><span style="color: #94E2D5;"> -</span><span style="color: #FAB387;">50</span><span style="color: #9399B2;">.</span><span style="color: #FAB387;">0</span><span style="color: #9399B2;">),</span></span>
+<span class="giallo-l"><span style="color: #9399B2;">            )</span></span>
+<span class="giallo-l"><span style="color: #94E2D5;">            .</span><span style="color: #89B4FA;font-style: italic;">to_ring</span><span style="color: #9399B2;">(</span><span style="color: #FAB387;">THICKNESS</span><span style="color: #9399B2;">),</span></span>
+<span class="giallo-l"><span style="color: #9399B2;">        ),</span></span>
+<span class="giallo-l"><span style="color: #9399B2;">    ];</span></span>
+<span class="giallo-l"><span style="color: #9399B2;font-style: italic;">    // Allow for 2 empty spaces</span></span>
+<span class="giallo-l"><span style="color: #CBA6F7;">    let</span><span> num_rings</span><span style="color: #94E2D5;"> =</span><span> rings</span><span style="color: #94E2D5;">.</span><span style="color: #89B4FA;font-style: italic;">len</span><span style="color: #9399B2;">()</span><span style="color: #94E2D5;"> +</span><span style="color: #FAB387;"> 2</span><span style="color: #9399B2;">;</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span style="color: #CBA6F7;">    for</span><span style="color: #9399B2;"> (</span><span>i</span><span style="color: #9399B2;">,</span><span> shape</span><span style="color: #9399B2;">)</span><span style="color: #CBA6F7;"> in</span><span> rings</span><span style="color: #94E2D5;">.</span><span style="color: #89B4FA;font-style: italic;">into_iter</span><span style="color: #9399B2;">()</span><span style="color: #94E2D5;">.</span><span style="color: #89B4FA;font-style: italic;">enumerate</span><span style="color: #9399B2;">() {</span></span>
+<span class="giallo-l"><span style="color: #9399B2;font-style: italic;">        // Distribute colors evenly across the rainbow.</span></span>
+<span class="giallo-l"><span style="color: #CBA6F7;">        let</span><span> color</span><span style="color: #94E2D5;"> =</span><span style="color: #F9E2AF;font-style: italic;"> Color</span><span style="color: #94E2D5;">::</span><span style="color: #89B4FA;font-style: italic;">hsl</span><span style="color: #9399B2;">(</span><span style="color: #FAB387;">360</span><span style="color: #94E2D5;">. *</span><span> i</span><span style="color: #CBA6F7;"> as f32</span><span style="color: #94E2D5;"> /</span><span> num_rings</span><span style="color: #CBA6F7;"> as f32</span><span style="color: #9399B2;">,</span><span style="color: #FAB387;"> 0</span><span style="color: #9399B2;">.</span><span style="color: #FAB387;">95</span><span style="color: #9399B2;">,</span><span style="color: #FAB387;"> 0</span><span style="color: #9399B2;">.</span><span style="color: #FAB387;">7</span><span style="color: #9399B2;">);</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span>        commands</span><span style="color: #94E2D5;">.</span><span style="color: #89B4FA;font-style: italic;">spawn</span><span style="color: #9399B2;">((</span></span>
+<span class="giallo-l"><span style="color: #89B4FA;font-style: italic;">            Mesh2d</span><span style="color: #9399B2;">(</span><span>shape</span><span style="color: #9399B2;">),</span></span>
+<span class="giallo-l"><span style="color: #89B4FA;font-style: italic;">            MeshMaterial2d</span><span style="color: #9399B2;">(</span><span>materials</span><span style="color: #94E2D5;">.</span><span style="color: #89B4FA;font-style: italic;">add</span><span style="color: #9399B2;">(</span><span>color</span><span style="color: #9399B2;">)),</span></span>
+<span class="giallo-l"><span style="color: #F9E2AF;">            Transform</span><span style="color: #94E2D5;">::</span><span style="color: #89B4FA;font-style: italic;">from_xyz</span><span style="color: #9399B2;">(</span></span>
+<span class="giallo-l"><span style="color: #9399B2;font-style: italic;">                // Distribute shapes from -X_EXTENT/2 to +X_EXTENT/2.</span></span>
+<span class="giallo-l"><span style="color: #94E2D5;">                -</span><span style="color: #F9E2AF;font-style: italic;">X_EXTENT</span><span style="color: #94E2D5;"> /</span><span style="color: #FAB387;"> 2</span><span style="color: #94E2D5;">. +</span><span> i</span><span style="color: #CBA6F7;"> as f32</span><span style="color: #94E2D5;"> /</span><span style="color: #9399B2;"> (</span><span>num_rings</span><span style="color: #94E2D5;"> -</span><span style="color: #FAB387;"> 1</span><span style="color: #9399B2;">)</span><span style="color: #CBA6F7;"> as f32</span><span style="color: #94E2D5;"> *</span><span style="color: #F9E2AF;font-style: italic;"> X_EXTENT</span><span style="color: #9399B2;">,</span></span>
+<span class="giallo-l"><span style="color: #94E2D5;">                -</span><span style="color: #F9E2AF;font-style: italic;">Y_EXTENT</span><span style="color: #94E2D5;"> /</span><span style="color: #FAB387;"> 2</span><span style="color: #94E2D5;">.</span><span style="color: #9399B2;">,</span></span>
+<span class="giallo-l"><span style="color: #FAB387;">                0</span><span style="color: #9399B2;">.</span><span style="color: #FAB387;">0</span><span style="color: #9399B2;">,</span></span>
+<span class="giallo-l"><span style="color: #9399B2;">            ),</span></span>
+<span class="giallo-l"><span style="color: #9399B2;">        ));</span></span>
+<span class="giallo-l"><span style="color: #9399B2;">    }</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span style="color: #CBA6F7;">    let mut</span><span> text</span><span style="color: #94E2D5;"> =</span><span style="color: #A6E3A1;"> &quot;Press &#39;R&#39; to pause/resume rotation&quot;</span><span style="color: #94E2D5;">.</span><span style="color: #89B4FA;font-style: italic;">to_string</span><span style="color: #9399B2;">();</span></span>
+<span class="giallo-l"><span style="color: #F9E2AF;font-style: italic;">    #</span><span style="color: #9399B2;">[</span><span style="color: #F9E2AF;font-style: italic;">cfg</span><span style="color: #9399B2;">(</span><span style="color: #F9E2AF;font-style: italic;">not</span><span style="color: #9399B2;">(</span><span style="color: #F9E2AF;font-style: italic;">target_arch </span><span style="color: #94E2D5;">=</span><span style="color: #A6E3A1;"> &quot;wasm32&quot;</span><span style="color: #9399B2;">))]</span></span>
+<span class="giallo-l"><span>    text</span><span style="color: #94E2D5;">.</span><span style="color: #89B4FA;font-style: italic;">push_str</span><span style="color: #9399B2;">(</span><span style="color: #A6E3A1;">&quot;</span><span style="color: #F5C2E7;">\n</span><span style="color: #A6E3A1;">Press &#39;Space&#39; to toggle wireframes&quot;</span><span style="color: #9399B2;">);</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span>    commands</span><span style="color: #94E2D5;">.</span><span style="color: #89B4FA;font-style: italic;">spawn</span><span style="color: #9399B2;">((</span></span>
+<span class="giallo-l"><span style="color: #F9E2AF;">        Text</span><span style="color: #94E2D5;">::</span><span style="color: #89B4FA;font-style: italic;">new</span><span style="color: #9399B2;">(</span><span>text</span><span style="color: #9399B2;">),</span></span>
+<span class="giallo-l"><span style="color: #F9E2AF;font-style: italic;">        Node</span><span style="color: #9399B2;"> {</span></span>
+<span class="giallo-l"><span>            position_type</span><span style="color: #94E2D5;">:</span><span style="color: #F9E2AF;"> PositionType</span><span style="color: #94E2D5;">::</span><span style="color: #F9E2AF;font-style: italic;">Absolute</span><span style="color: #9399B2;">,</span></span>
+<span class="giallo-l"><span>            top</span><span style="color: #94E2D5;">:</span><span style="color: #89B4FA;font-style: italic;"> px</span><span style="color: #9399B2;">(</span><span style="color: #FAB387;">12</span><span style="color: #9399B2;">),</span></span>
+<span class="giallo-l"><span>            left</span><span style="color: #94E2D5;">:</span><span style="color: #89B4FA;font-style: italic;"> px</span><span style="color: #9399B2;">(</span><span style="color: #FAB387;">12</span><span style="color: #9399B2;">),</span></span>
+<span class="giallo-l"><span style="color: #94E2D5;">            ..</span><span style="color: #89B4FA;font-style: italic;">default</span><span style="color: #9399B2;">()</span></span>
+<span class="giallo-l"><span style="color: #9399B2;">        },</span></span>
+<span class="giallo-l"><span style="color: #9399B2;">    ));</span></span>
+<span class="giallo-l"><span style="color: #9399B2;">}</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span style="color: #F9E2AF;font-style: italic;">#</span><span style="color: #9399B2;">[</span><span style="color: #F9E2AF;font-style: italic;">cfg</span><span style="color: #9399B2;">(</span><span style="color: #F9E2AF;font-style: italic;">not</span><span style="color: #9399B2;">(</span><span style="color: #F9E2AF;font-style: italic;">target_arch </span><span style="color: #94E2D5;">=</span><span style="color: #A6E3A1;"> &quot;wasm32&quot;</span><span style="color: #9399B2;">))]</span></span>
+<span class="giallo-l"><span style="color: #CBA6F7;">fn</span><span style="color: #89B4FA;font-style: italic;"> toggle_wireframe</span><span style="color: #9399B2;">(</span><span style="color: #CBA6F7;">mut</span><span style="color: #EBA0AC;"> wireframe_config</span><span style="color: #94E2D5;">:</span><span style="color: #F9E2AF;font-style: italic;"> ResMut</span><span style="color: #89DCEB;">&lt;</span><span style="color: #F9E2AF;font-style: italic;">Wireframe2dConfig</span><span style="color: #89DCEB;">&gt;</span><span style="color: #9399B2;">) {</span></span>
+<span class="giallo-l"><span>    wireframe_config</span><span style="color: #94E2D5;">.</span><span>global </span><span style="color: #94E2D5;">= !</span><span>wireframe_config</span><span style="color: #94E2D5;">.</span><span>global</span><span style="color: #9399B2;">;</span></span>
+<span class="giallo-l"><span style="color: #9399B2;">}</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span style="color: #CBA6F7;">fn</span><span style="color: #89B4FA;font-style: italic;"> rotate</span><span style="color: #9399B2;">(</span><span style="color: #CBA6F7;">mut</span><span style="color: #EBA0AC;"> query</span><span style="color: #94E2D5;">:</span><span style="color: #F9E2AF;font-style: italic;"> Query</span><span style="color: #89DCEB;">&lt;</span><span style="color: #94E2D5;">&amp;</span><span style="color: #CBA6F7;">mut</span><span style="color: #F9E2AF;font-style: italic;"> Transform</span><span style="color: #9399B2;">,</span><span style="color: #F9E2AF;font-style: italic;"> With</span><span style="color: #89DCEB;">&lt;</span><span style="color: #F9E2AF;font-style: italic;">Mesh2d</span><span style="color: #89DCEB;">&gt;&gt;</span><span style="color: #9399B2;">,</span><span style="color: #EBA0AC;"> time</span><span style="color: #94E2D5;">:</span><span style="color: #F9E2AF;font-style: italic;"> Res</span><span style="color: #89DCEB;">&lt;</span><span style="color: #F9E2AF;font-style: italic;">Time</span><span style="color: #89DCEB;">&gt;</span><span style="color: #9399B2;">) {</span></span>
+<span class="giallo-l"><span style="color: #CBA6F7;">    for mut</span><span> transform</span><span style="color: #CBA6F7;"> in</span><span style="color: #94E2D5;"> &amp;</span><span style="color: #CBA6F7;">mut</span><span> query</span><span style="color: #9399B2;"> {</span></span>
+<span class="giallo-l"><span>        transform</span><span style="color: #94E2D5;">.</span><span style="color: #89B4FA;font-style: italic;">rotate_z</span><span style="color: #9399B2;">(</span><span>time</span><span style="color: #94E2D5;">.</span><span style="color: #89B4FA;font-style: italic;">delta_secs</span><span style="color: #9399B2;">()</span><span style="color: #94E2D5;"> /</span><span style="color: #FAB387;"> 2</span><span style="color: #9399B2;">.</span><span style="color: #FAB387;">0</span><span style="color: #9399B2;">);</span></span>
+<span class="giallo-l"><span style="color: #9399B2;">    }</span></span>
+<span class="giallo-l"><span style="color: #9399B2;">}</span></span></code></pre>
+<p>在这个案例中出现的重要对象如下:</p>
+<ul>
+<li>Mesh2d</li>
+<li>Mesh</li>
+<li>ColorMaterial</li>
+<li>MeshMaterial2d
+Mesh2d是Mesh的Handle包装，它在bevy_mesh中被定义。Mesh是一类资源，它表示在内存中的几何体数据。
+ColorMaterial是一类资源，它表示一个材质，在bevy_sprite_render中被定义。MeshMaterial2d是一个具体材质的handle包装。它在bevy_sprite_render中被定义。在此上下文中，它表示ColorMaterial的Handle包装。</li>
+</ul>
+<h1 id="colormaterial">ColorMaterial</h1>
+<p>ColorMaterial由ColorMaterialPlugin引入。代码如下:</p>
+<pre class="giallo" style="color: #CDD6F4; background-color: #1E1E2E;"><code data-lang="rust"><span class="giallo-l"><span style="color: #F9E2AF;font-style: italic;">#</span><span style="color: #9399B2;">[</span><span style="color: #F9E2AF;font-style: italic;">derive</span><span style="color: #9399B2;">(</span><span style="color: #F9E2AF;font-style: italic;">Default</span><span style="color: #9399B2;">)]</span></span>
+<span class="giallo-l"><span style="color: #CBA6F7;">pub struct</span><span style="color: #F9E2AF;font-style: italic;"> ColorMaterialPlugin</span><span style="color: #9399B2;">;</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span style="color: #CBA6F7;">impl</span><span style="color: #F9E2AF;font-style: italic;"> Plugin</span><span style="color: #CBA6F7;"> for</span><span style="color: #F9E2AF;font-style: italic;"> ColorMaterialPlugin</span><span style="color: #9399B2;"> {</span></span>
+<span class="giallo-l"><span style="color: #CBA6F7;">    fn</span><span style="color: #89B4FA;font-style: italic;"> build</span><span style="color: #9399B2;">(</span><span style="color: #94E2D5;">&amp;</span><span style="color: #F38BA8;">self</span><span style="color: #9399B2;">,</span><span style="color: #EBA0AC;"> app</span><span style="color: #94E2D5;">: &amp;</span><span style="color: #CBA6F7;">mut</span><span style="color: #F9E2AF;font-style: italic;"> App</span><span style="color: #9399B2;">) {</span></span>
+<span class="giallo-l"><span style="color: #89B4FA;font-style: italic;">        embedded_asset!</span><span style="color: #9399B2;">(</span><span>app</span><span style="color: #9399B2;">,</span><span style="color: #A6E3A1;"> &quot;color_material.wgsl&quot;</span><span style="color: #9399B2;">);</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span>        app</span><span style="color: #94E2D5;">.</span><span style="color: #89B4FA;font-style: italic;">add_plugins</span><span style="color: #9399B2;">(</span><span style="color: #F9E2AF;">Material2dPlugin</span><span style="color: #94E2D5;">::</span><span style="color: #89DCEB;">&lt;</span><span style="color: #F9E2AF;font-style: italic;">ColorMaterial</span><span style="color: #89DCEB;">&gt;</span><span style="color: #94E2D5;">::</span><span style="color: #89B4FA;font-style: italic;">default</span><span style="color: #9399B2;">())</span></span>
+<span class="giallo-l"><span style="color: #94E2D5;">            .</span><span style="color: #89B4FA;font-style: italic;">register_asset_reflect</span><span style="color: #94E2D5;">::</span><span style="color: #89DCEB;">&lt;</span><span style="color: #F9E2AF;font-style: italic;">ColorMaterial</span><span style="color: #89DCEB;">&gt;</span><span style="color: #9399B2;">();</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span style="color: #9399B2;font-style: italic;">        // Initialize the default material handle.</span></span>
+<span class="giallo-l"><span>        app</span><span style="color: #94E2D5;">.</span><span style="color: #89B4FA;font-style: italic;">world_mut</span><span style="color: #9399B2;">()</span></span>
+<span class="giallo-l"><span style="color: #94E2D5;">            .</span><span style="color: #89B4FA;font-style: italic;">resource_mut</span><span style="color: #94E2D5;">::</span><span style="color: #89DCEB;">&lt;</span><span style="color: #F9E2AF;font-style: italic;">Assets</span><span style="color: #89DCEB;">&lt;</span><span style="color: #F9E2AF;font-style: italic;">ColorMaterial</span><span style="color: #89DCEB;">&gt;&gt;</span><span style="color: #9399B2;">()</span></span>
+<span class="giallo-l"><span style="color: #94E2D5;">            .</span><span style="color: #89B4FA;font-style: italic;">insert</span><span style="color: #9399B2;">(</span></span>
+<span class="giallo-l"><span style="color: #94E2D5;">                &amp;</span><span style="color: #F9E2AF;">Handle</span><span style="color: #94E2D5;">::</span><span style="color: #89DCEB;">&lt;</span><span style="color: #F9E2AF;font-style: italic;">ColorMaterial</span><span style="color: #89DCEB;">&gt;</span><span style="color: #94E2D5;">::</span><span style="color: #89B4FA;font-style: italic;">default</span><span style="color: #9399B2;">(),</span></span>
+<span class="giallo-l"><span style="color: #F9E2AF;font-style: italic;">                ColorMaterial</span><span style="color: #9399B2;"> {</span></span>
+<span class="giallo-l"><span>                    color</span><span style="color: #94E2D5;">:</span><span style="color: #F9E2AF;"> Color</span><span style="color: #94E2D5;">::</span><span style="color: #89B4FA;font-style: italic;">srgb</span><span style="color: #9399B2;">(</span><span style="color: #FAB387;">1</span><span style="color: #9399B2;">.</span><span style="color: #FAB387;">0</span><span style="color: #9399B2;">,</span><span style="color: #FAB387;"> 0</span><span style="color: #9399B2;">.</span><span style="color: #FAB387;">0</span><span style="color: #9399B2;">,</span><span style="color: #FAB387;"> 1</span><span style="color: #9399B2;">.</span><span style="color: #FAB387;">0</span><span style="color: #9399B2;">),</span></span>
+<span class="giallo-l"><span style="color: #94E2D5;">                    ..</span><span style="color: #F9E2AF;">Default</span><span style="color: #94E2D5;">::</span><span style="color: #89B4FA;font-style: italic;">default</span><span style="color: #9399B2;">()</span></span>
+<span class="giallo-l"><span style="color: #9399B2;">                },</span></span>
+<span class="giallo-l"><span style="color: #9399B2;">            )</span></span>
+<span class="giallo-l"><span style="color: #94E2D5;">            .</span><span style="color: #89B4FA;font-style: italic;">unwrap</span><span style="color: #9399B2;">();</span></span>
+<span class="giallo-l"><span style="color: #9399B2;">    }</span></span>
+<span class="giallo-l"><span style="color: #9399B2;">}</span></span>
+<span class="giallo-l"></span></code></pre>
+<p>Material2dPlugin的实现如下:</p>
+<pre class="giallo" style="color: #CDD6F4; background-color: #1E1E2E;"><code data-lang="rust"><span class="giallo-l"><span style="color: #CBA6F7;">impl</span><span style="color: #89DCEB;">&lt;</span><span style="color: #F9E2AF;font-style: italic;">M</span><span style="color: #94E2D5;">:</span><span style="color: #F9E2AF;font-style: italic;"> Material2d</span><span style="color: #89DCEB;">&gt;</span><span style="color: #F9E2AF;font-style: italic;"> Plugin</span><span style="color: #CBA6F7;"> for</span><span style="color: #F9E2AF;font-style: italic;"> Material2dPlugin</span><span style="color: #89DCEB;">&lt;</span><span style="color: #F9E2AF;font-style: italic;">M</span><span style="color: #89DCEB;">&gt;</span></span>
+<span class="giallo-l"><span style="color: #CBA6F7;">where</span></span>
+<span class="giallo-l"><span style="color: #F9E2AF;font-style: italic;">    M</span><span style="color: #94E2D5;">::</span><span style="color: #F9E2AF;font-style: italic;">Data</span><span style="color: #94E2D5;">:</span><span style="color: #F9E2AF;font-style: italic;"> PartialEq</span><span style="color: #94E2D5;"> +</span><span style="color: #F9E2AF;font-style: italic;"> Eq</span><span style="color: #94E2D5;"> +</span><span style="color: #F9E2AF;font-style: italic;"> Hash</span><span style="color: #94E2D5;"> +</span><span style="color: #F9E2AF;font-style: italic;"> Clone</span><span style="color: #9399B2;">,</span></span>
+<span class="giallo-l"><span style="color: #9399B2;">{</span></span>
+<span class="giallo-l"><span style="color: #CBA6F7;">    fn</span><span style="color: #89B4FA;font-style: italic;"> build</span><span style="color: #9399B2;">(</span><span style="color: #94E2D5;">&amp;</span><span style="color: #F38BA8;">self</span><span style="color: #9399B2;">,</span><span style="color: #EBA0AC;"> app</span><span style="color: #94E2D5;">: &amp;</span><span style="color: #CBA6F7;">mut</span><span style="color: #F9E2AF;font-style: italic;"> App</span><span style="color: #9399B2;">) {</span></span>
+<span class="giallo-l"><span>        app</span><span style="color: #94E2D5;">.</span><span style="color: #89B4FA;font-style: italic;">init_asset</span><span style="color: #94E2D5;">::</span><span style="color: #89DCEB;">&lt;</span><span style="color: #F9E2AF;font-style: italic;">M</span><span style="color: #89DCEB;">&gt;</span><span style="color: #9399B2;">()</span></span>
+<span class="giallo-l"><span style="color: #94E2D5;">            .</span><span style="color: #89B4FA;font-style: italic;">init_resource</span><span style="color: #94E2D5;">::</span><span style="color: #89DCEB;">&lt;</span><span style="color: #F9E2AF;font-style: italic;">EntitiesNeedingSpecialization</span><span style="color: #89DCEB;">&lt;</span><span style="color: #F9E2AF;font-style: italic;">M</span><span style="color: #89DCEB;">&gt;&gt;</span><span style="color: #9399B2;">()</span></span>
+<span class="giallo-l"><span style="color: #94E2D5;">            .</span><span style="color: #89B4FA;font-style: italic;">register_type</span><span style="color: #94E2D5;">::</span><span style="color: #89DCEB;">&lt;</span><span style="color: #F9E2AF;font-style: italic;">MeshMaterial2d</span><span style="color: #89DCEB;">&lt;</span><span style="color: #F9E2AF;font-style: italic;">M</span><span style="color: #89DCEB;">&gt;&gt;</span><span style="color: #9399B2;">()</span></span>
+<span class="giallo-l"><span style="color: #94E2D5;">            .</span><span style="color: #89B4FA;font-style: italic;">add_plugins</span><span style="color: #9399B2;">(</span><span style="color: #F9E2AF;">RenderAssetPlugin</span><span style="color: #94E2D5;">::</span><span style="color: #89DCEB;">&lt;</span><span style="color: #F9E2AF;font-style: italic;">PreparedMaterial2d</span><span style="color: #89DCEB;">&lt;</span><span style="color: #F9E2AF;font-style: italic;">M</span><span style="color: #89DCEB;">&gt;</span><span style="color: #9399B2;">,</span><span style="color: #F9E2AF;font-style: italic;"> GpuImage</span><span style="color: #89DCEB;">&gt;</span><span style="color: #94E2D5;">::</span><span style="color: #89B4FA;font-style: italic;">default</span><span style="color: #9399B2;">())</span></span>
+<span class="giallo-l"><span style="color: #94E2D5;">            .</span><span style="color: #89B4FA;font-style: italic;">add_systems</span><span style="color: #9399B2;">(</span></span>
+<span class="giallo-l"><span style="color: #F9E2AF;font-style: italic;">                PostUpdate</span><span style="color: #9399B2;">,</span></span>
+<span class="giallo-l"><span style="color: #F9E2AF;">                check_entities_needing_specialization</span><span style="color: #94E2D5;">::</span><span style="color: #89DCEB;">&lt;</span><span style="color: #F9E2AF;font-style: italic;">M</span><span style="color: #89DCEB;">&gt;</span><span style="color: #94E2D5;">.</span><span style="color: #89B4FA;font-style: italic;">after</span><span style="color: #9399B2;">(</span><span style="color: #F9E2AF;font-style: italic;">AssetEventSystems</span><span style="color: #9399B2;">),</span></span>
+<span class="giallo-l"><span style="color: #9399B2;">            );</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span style="color: #CBA6F7;">        if let</span><span style="color: #F9E2AF;font-style: italic;"> Some</span><span style="color: #9399B2;">(</span><span>render_app</span><span style="color: #9399B2;">)</span><span style="color: #94E2D5;"> =</span><span> app</span><span style="color: #94E2D5;">.</span><span style="color: #89B4FA;font-style: italic;">get_sub_app_mut</span><span style="color: #9399B2;">(</span><span style="color: #F9E2AF;font-style: italic;">RenderApp</span><span style="color: #9399B2;">) {</span></span>
+<span class="giallo-l"><span>            render_app</span></span>
+<span class="giallo-l"><span style="color: #94E2D5;">                .</span><span style="color: #89B4FA;font-style: italic;">init_gpu_resource</span><span style="color: #94E2D5;">::</span><span style="color: #89DCEB;">&lt;</span><span style="color: #F9E2AF;font-style: italic;">SpecializedMaterial2dPipelineCache</span><span style="color: #89DCEB;">&lt;</span><span style="color: #F9E2AF;font-style: italic;">M</span><span style="color: #89DCEB;">&gt;&gt;</span><span style="color: #9399B2;">()</span></span>
+<span class="giallo-l"><span style="color: #94E2D5;">                .</span><span style="color: #89B4FA;font-style: italic;">add_render_command</span><span style="color: #94E2D5;">::</span><span style="color: #89DCEB;">&lt;</span><span style="color: #F9E2AF;font-style: italic;">Opaque2d</span><span style="color: #9399B2;">,</span><span style="color: #F9E2AF;font-style: italic;"> DrawMaterial2d</span><span style="color: #89DCEB;">&lt;</span><span style="color: #F9E2AF;font-style: italic;">M</span><span style="color: #89DCEB;">&gt;&gt;</span><span style="color: #9399B2;">()</span></span>
+<span class="giallo-l"><span style="color: #94E2D5;">                .</span><span style="color: #89B4FA;font-style: italic;">add_render_command</span><span style="color: #94E2D5;">::</span><span style="color: #89DCEB;">&lt;</span><span style="color: #F9E2AF;font-style: italic;">AlphaMask2d</span><span style="color: #9399B2;">,</span><span style="color: #F9E2AF;font-style: italic;"> DrawMaterial2d</span><span style="color: #89DCEB;">&lt;</span><span style="color: #F9E2AF;font-style: italic;">M</span><span style="color: #89DCEB;">&gt;&gt;</span><span style="color: #9399B2;">()</span></span>
+<span class="giallo-l"><span style="color: #94E2D5;">                .</span><span style="color: #89B4FA;font-style: italic;">add_render_command</span><span style="color: #94E2D5;">::</span><span style="color: #89DCEB;">&lt;</span><span style="color: #F9E2AF;font-style: italic;">Transparent2d</span><span style="color: #9399B2;">,</span><span style="color: #F9E2AF;font-style: italic;"> DrawMaterial2d</span><span style="color: #89DCEB;">&lt;</span><span style="color: #F9E2AF;font-style: italic;">M</span><span style="color: #89DCEB;">&gt;&gt;</span><span style="color: #9399B2;">()</span></span>
+<span class="giallo-l"><span style="color: #94E2D5;">                .</span><span style="color: #89B4FA;font-style: italic;">init_resource</span><span style="color: #94E2D5;">::</span><span style="color: #89DCEB;">&lt;</span><span style="color: #F9E2AF;font-style: italic;">RenderMaterial2dInstances</span><span style="color: #89DCEB;">&lt;</span><span style="color: #F9E2AF;font-style: italic;">M</span><span style="color: #89DCEB;">&gt;&gt;</span><span style="color: #9399B2;">()</span></span>
+<span class="giallo-l"><span style="color: #94E2D5;">                .</span><span style="color: #89B4FA;font-style: italic;">init_gpu_resource</span><span style="color: #94E2D5;">::</span><span style="color: #89DCEB;">&lt;</span><span style="color: #F9E2AF;font-style: italic;">SpecializedMeshPipelines</span><span style="color: #89DCEB;">&lt;</span><span style="color: #F9E2AF;font-style: italic;">Material2dPipeline</span><span style="color: #89DCEB;">&lt;</span><span style="color: #F9E2AF;font-style: italic;">M</span><span style="color: #89DCEB;">&gt;&gt;&gt;</span><span style="color: #9399B2;">()</span></span>
+<span class="giallo-l"><span style="color: #94E2D5;">                .</span><span style="color: #89B4FA;font-style: italic;">init_resource</span><span style="color: #94E2D5;">::</span><span style="color: #89DCEB;">&lt;</span><span style="color: #F9E2AF;font-style: italic;">PendingMeshMaterial2dQueues</span><span style="color: #89DCEB;">&gt;</span><span style="color: #9399B2;">()</span></span>
+<span class="giallo-l"><span style="color: #94E2D5;">                .</span><span style="color: #89B4FA;font-style: italic;">allow_ambiguous_resource</span><span style="color: #94E2D5;">::</span><span style="color: #89DCEB;">&lt;</span><span style="color: #F9E2AF;font-style: italic;">PendingMeshMaterial2dQueues</span><span style="color: #89DCEB;">&gt;</span><span style="color: #9399B2;">()</span></span>
+<span class="giallo-l"><span style="color: #94E2D5;">                .</span><span style="color: #89B4FA;font-style: italic;">add_systems</span><span style="color: #9399B2;">(</span></span>
+<span class="giallo-l"><span style="color: #F9E2AF;font-style: italic;">                    RenderStartup</span><span style="color: #9399B2;">,</span></span>
+<span class="giallo-l"><span style="color: #F9E2AF;">                    init_material_2d_pipeline</span><span style="color: #94E2D5;">::</span><span style="color: #89DCEB;">&lt;</span><span style="color: #F9E2AF;font-style: italic;">M</span><span style="color: #89DCEB;">&gt;</span><span style="color: #94E2D5;">.</span><span style="color: #89B4FA;font-style: italic;">after</span><span style="color: #9399B2;">(</span><span>init_mesh_2d_pipeline</span><span style="color: #9399B2;">),</span></span>
+<span class="giallo-l"><span style="color: #9399B2;">                )</span></span>
+<span class="giallo-l"><span style="color: #94E2D5;">                .</span><span style="color: #89B4FA;font-style: italic;">add_systems</span><span style="color: #9399B2;">(</span></span>
+<span class="giallo-l"><span style="color: #F9E2AF;font-style: italic;">                    ExtractSchedule</span><span style="color: #9399B2;">,</span></span>
+<span class="giallo-l"><span style="color: #9399B2;">                    (</span></span>
+<span class="giallo-l"><span style="color: #F9E2AF;">                        extract_entities_needs_specialization</span><span style="color: #94E2D5;">::</span><span style="color: #89DCEB;">&lt;</span><span style="color: #F9E2AF;font-style: italic;">M</span><span style="color: #89DCEB;">&gt;</span></span>
+<span class="giallo-l"><span style="color: #94E2D5;">                            .</span><span style="color: #89B4FA;font-style: italic;">in_set</span><span style="color: #9399B2;">(</span><span style="color: #F9E2AF;">DirtySpecializationSystems</span><span style="color: #94E2D5;">::</span><span style="color: #F9E2AF;font-style: italic;">CheckForChanges</span><span style="color: #9399B2;">),</span></span>
+<span class="giallo-l"><span style="color: #F9E2AF;">                        extract_entities_that_need_specializations_removed</span><span style="color: #94E2D5;">::</span><span style="color: #89DCEB;">&lt;</span><span style="color: #F9E2AF;font-style: italic;">M</span><span style="color: #89DCEB;">&gt;</span></span>
+<span class="giallo-l"><span style="color: #94E2D5;">                            .</span><span style="color: #89B4FA;font-style: italic;">in_set</span><span style="color: #9399B2;">(</span><span style="color: #F9E2AF;">DirtySpecializationSystems</span><span style="color: #94E2D5;">::</span><span style="color: #F9E2AF;font-style: italic;">CheckForRemovals</span><span style="color: #9399B2;">),</span></span>
+<span class="giallo-l"><span style="color: #F9E2AF;">                        extract_mesh_materials_2d</span><span style="color: #94E2D5;">::</span><span style="color: #89DCEB;">&lt;</span><span style="color: #F9E2AF;font-style: italic;">M</span><span style="color: #89DCEB;">&gt;</span><span style="color: #9399B2;">,</span></span>
+<span class="giallo-l"><span style="color: #9399B2;">                    ),</span></span>
+<span class="giallo-l"><span style="color: #9399B2;">                )</span></span>
+<span class="giallo-l"><span style="color: #94E2D5;">                .</span><span style="color: #89B4FA;font-style: italic;">add_systems</span><span style="color: #9399B2;">(</span></span>
+<span class="giallo-l"><span style="color: #F9E2AF;font-style: italic;">                    Render</span><span style="color: #9399B2;">,</span></span>
+<span class="giallo-l"><span style="color: #9399B2;">                    (</span></span>
+<span class="giallo-l"><span style="color: #F9E2AF;">                        specialize_material2d_meshes</span><span style="color: #94E2D5;">::</span><span style="color: #89DCEB;">&lt;</span><span style="color: #F9E2AF;font-style: italic;">M</span><span style="color: #89DCEB;">&gt;</span></span>
+<span class="giallo-l"><span style="color: #94E2D5;">                            .</span><span style="color: #89B4FA;font-style: italic;">in_set</span><span style="color: #9399B2;">(</span><span style="color: #F9E2AF;">RenderSystems</span><span style="color: #94E2D5;">::</span><span style="color: #F9E2AF;font-style: italic;">Specialize</span><span style="color: #9399B2;">)</span></span>
+<span class="giallo-l"><span style="color: #94E2D5;">                            .</span><span style="color: #89B4FA;font-style: italic;">after</span><span style="color: #9399B2;">(</span><span style="color: #F9E2AF;">prepare_assets</span><span style="color: #94E2D5;">::</span><span style="color: #89DCEB;">&lt;</span><span style="color: #F9E2AF;font-style: italic;">PreparedMaterial2d</span><span style="color: #89DCEB;">&lt;</span><span style="color: #F9E2AF;font-style: italic;">M</span><span style="color: #89DCEB;">&gt;&gt;</span><span style="color: #9399B2;">)</span></span>
+<span class="giallo-l"><span style="color: #94E2D5;">                            .</span><span style="color: #89B4FA;font-style: italic;">after</span><span style="color: #9399B2;">(</span><span style="color: #F9E2AF;">prepare_assets</span><span style="color: #94E2D5;">::</span><span style="color: #89DCEB;">&lt;</span><span style="color: #F9E2AF;font-style: italic;">RenderMesh</span><span style="color: #89DCEB;">&gt;</span><span style="color: #9399B2;">)</span></span>
+<span class="giallo-l"><span style="color: #94E2D5;">                            .</span><span style="color: #89B4FA;font-style: italic;">after</span><span style="color: #9399B2;">(</span><span>prepare_pending_mesh_material2d_queues</span><span style="color: #9399B2;">),</span></span>
+<span class="giallo-l"><span style="color: #F9E2AF;">                        queue_material2d_meshes</span><span style="color: #94E2D5;">::</span><span style="color: #89DCEB;">&lt;</span><span style="color: #F9E2AF;font-style: italic;">M</span><span style="color: #89DCEB;">&gt;</span></span>
+<span class="giallo-l"><span style="color: #94E2D5;">                            .</span><span style="color: #89B4FA;font-style: italic;">in_set</span><span style="color: #9399B2;">(</span><span style="color: #F9E2AF;">RenderSystems</span><span style="color: #94E2D5;">::</span><span style="color: #F9E2AF;font-style: italic;">QueueMeshes</span><span style="color: #9399B2;">)</span></span>
+<span class="giallo-l"><span style="color: #94E2D5;">                            .</span><span style="color: #89B4FA;font-style: italic;">after</span><span style="color: #9399B2;">(</span><span style="color: #F9E2AF;">prepare_assets</span><span style="color: #94E2D5;">::</span><span style="color: #89DCEB;">&lt;</span><span style="color: #F9E2AF;font-style: italic;">PreparedMaterial2d</span><span style="color: #89DCEB;">&lt;</span><span style="color: #F9E2AF;font-style: italic;">M</span><span style="color: #89DCEB;">&gt;&gt;</span><span style="color: #9399B2;">),</span></span>
+<span class="giallo-l"><span style="color: #9399B2;">                    ),</span></span>
+<span class="giallo-l"><span style="color: #9399B2;">                );</span></span>
+<span class="giallo-l"><span style="color: #9399B2;">        }</span></span>
+<span class="giallo-l"><span style="color: #9399B2;">    }</span></span>
+<span class="giallo-l"><span style="color: #9399B2;">}</span></span>
+<span class="giallo-l"></span></code></pre>
+<p>在RenderStartup阶段生成Material2dPipeline。
+在ExtractSchedule阶段更新需要重新生成的主世界实体，提取主世界的数据。
+在Render阶段生成pipeline，同时生成RenderPhase
+那么RenderPhase如何使用？</p>
+
+    </div>
+
+    
+    
+
+    <div class="post-footer">
+        
+            
+                <div class="post-tags">
+                    
+                        <a href="https://zuiyu1998.github.io/tags/bevy/">#bevy</a>
+                    
+                        <a href="https://zuiyu1998.github.io/tags/renderer/">#renderer</a>
+                    
+                </div>
+            
+            
+                <div class="post-nav">
+                    
+                    
+                        <a class="next" href="https:&#x2F;&#x2F;zuiyu1998.github.io&#x2F;bevy-renderer&#x2F;">从零开始渲染器 ›</a>
+                    
+                </div>
+            
+
+        
+
+    </div>
+
+    
+    
+</article>
+
+
+                </div>
+            </main>
+
+            
+            
+        </div>
+
+      
+          <script type="text/javascript" src="https://zuiyu1998.github.io/even.js" ></script>
+      
+    </body>
+
+</html>
