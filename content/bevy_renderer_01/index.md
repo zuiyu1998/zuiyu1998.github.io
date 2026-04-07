@@ -1,6 +1,6 @@
 +++
 title = "从零开始bevy渲染器设计-01-具体案例"
-date = 2026-03-01
+date = 2026-04-07
 
 [taxonomies]
 tags = ["bevy", "renderer"]
@@ -173,85 +173,42 @@ fn rotate(mut query: Query<&mut Transform, With<Mesh2d>>, time: Res<Time>) {
 }
 ```
 
-在这个案例中Mesh2d是几何体，MeshMaterial2d是材质。几何体和材质是如何被bevy 2d renderer所渲染。
-Mesh2d存储的是Mesh的句柄，Mesh2d指向的几何体数据存储在Mesh的资源中。
+在这个案例中出现的重要对象如下:
 
-RenderAssetPlugin负责从主世界获取资源到渲染世界。
-在RenderPlugin中引入的MeshRenderAssetPlugin负责将Mesh资源转化为RenderMesh。
+- Mesh2d
+- Mesh
+- ColorMaterial
+- MeshMaterial2d
+  Mesh2d是Mesh的Handle包装，它在bevy_mesh中被定义。Mesh是一类资源，它表示在内存中的几何体数据。
+  ColorMaterial是一类资源，它表示一个材质，在bevy_sprite_render中被定义。MeshMaterial2d是一个具体材质的handle包装。它在bevy_sprite_render中被定义。在此上下文中，它表示ColorMaterial的Handle包装。
 
-MeshMaterial2d存储的ColorMaterial的句柄，MeshMaterial2d指向的材质数据存储在ColorMaterial资源中。 Material2dPlugin负责处理类似ColorMaterial的资源。它将ColorMaterial转换为PreparedMaterial2d。
+# ColorMaterial
 
-MeshMaterial2dPlugin中queue_material2d_meshes系统创建摄像机所观察到的所有要渲染的实体，并创建phase.
-Transparent2d定义在bevy_core_pipelie中。main_opaque_pass_2d系统使用这些phase创建实际的pass，向gpu通信。
-main_opaque_pass_2d系统的代码如下:
+ColorMaterial由ColorMaterialPlugin引入。代码如下:
 
 ```rust
-pub fn main_opaque_pass_2d(
-    world: &World,
-    view: ViewQuery<(
-        &ExtractedCamera,
-        &ExtractedView,
-        &ViewTarget,
-        &ViewDepthTexture,
-    )>,
-    opaque_phases: Res<ViewBinnedRenderPhases<Opaque2d>>,
-    alpha_mask_phases: Res<ViewBinnedRenderPhases<AlphaMask2d>>,
-    mut ctx: RenderContext,
-) {
-    let view_entity = view.entity();
-    let (camera, extracted_view, target, depth) = view.into_inner();
+#[derive(Default)]
+pub struct ColorMaterialPlugin;
 
-    let (Some(opaque_phase), Some(alpha_mask_phase)) = (
-        opaque_phases.get(&extracted_view.retained_view_entity),
-        alpha_mask_phases.get(&extracted_view.retained_view_entity),
-    ) else {
-        return;
-    };
+impl Plugin for ColorMaterialPlugin {
+    fn build(&self, app: &mut App) {
+        embedded_asset!(app, "color_material.wgsl");
 
-    if opaque_phase.is_empty() && alpha_mask_phase.is_empty() {
-        return;
+        app.add_plugins(Material2dPlugin::<ColorMaterial>::default())
+            .register_asset_reflect::<ColorMaterial>();
+
+        // Initialize the default material handle.
+        app.world_mut()
+            .resource_mut::<Assets<ColorMaterial>>()
+            .insert(
+                &Handle::<ColorMaterial>::default(),
+                ColorMaterial {
+                    color: Color::srgb(1.0, 0.0, 1.0),
+                    ..Default::default()
+                },
+            )
+            .unwrap();
     }
-
-    #[cfg(feature = "trace")]
-    let _span = info_span!("main_opaque_pass_2d").entered();
-
-    let diagnostics = ctx.diagnostic_recorder();
-    let diagnostics = diagnostics.as_deref();
-
-    let color_attachments = [Some(target.get_color_attachment())];
-    let depth_stencil_attachment = Some(depth.get_attachment(StoreOp::Store));
-
-    let mut render_pass = ctx.begin_tracked_render_pass(RenderPassDescriptor {
-        label: Some("main_opaque_pass_2d"),
-        color_attachments: &color_attachments,
-        depth_stencil_attachment,
-        timestamp_writes: None,
-        occlusion_query_set: None,
-        multiview_mask: None,
-    });
-    let pass_span = diagnostics.pass_span(&mut render_pass, "main_opaque_pass_2d");
-
-    if let Some(viewport) = camera.viewport.as_ref() {
-        render_pass.set_camera_viewport(viewport);
-    }
-
-    if !opaque_phase.is_empty() {
-        #[cfg(feature = "trace")]
-        let _opaque_span = info_span!("opaque_main_pass_2d").entered();
-        if let Err(err) = opaque_phase.render(&mut render_pass, world, view_entity) {
-            error!("Error encountered while rendering the 2d opaque phase {err:?}");
-        }
-    }
-
-    if !alpha_mask_phase.is_empty() {
-        #[cfg(feature = "trace")]
-        let _alpha_mask_span = info_span!("alpha_mask_main_pass_2d").entered();
-        if let Err(err) = alpha_mask_phase.render(&mut render_pass, world, view_entity) {
-            error!("Error encountered while rendering the 2d alpha mask phase {err:?}");
-        }
-    }
-
-    pass_span.end(&mut render_pass);
 }
 
 ```
