@@ -212,3 +212,68 @@ impl Plugin for ColorMaterialPlugin {
 }
 
 ```
+
+Material2dPlugin的实现如下:
+
+```rust
+impl<M: Material2d> Plugin for Material2dPlugin<M>
+where
+    M::Data: PartialEq + Eq + Hash + Clone,
+{
+    fn build(&self, app: &mut App) {
+        app.init_asset::<M>()
+            .init_resource::<EntitiesNeedingSpecialization<M>>()
+            .register_type::<MeshMaterial2d<M>>()
+            .add_plugins(RenderAssetPlugin::<PreparedMaterial2d<M>, GpuImage>::default())
+            .add_systems(
+                PostUpdate,
+                check_entities_needing_specialization::<M>.after(AssetEventSystems),
+            );
+
+        if let Some(render_app) = app.get_sub_app_mut(RenderApp) {
+            render_app
+                .init_gpu_resource::<SpecializedMaterial2dPipelineCache<M>>()
+                .add_render_command::<Opaque2d, DrawMaterial2d<M>>()
+                .add_render_command::<AlphaMask2d, DrawMaterial2d<M>>()
+                .add_render_command::<Transparent2d, DrawMaterial2d<M>>()
+                .init_resource::<RenderMaterial2dInstances<M>>()
+                .init_gpu_resource::<SpecializedMeshPipelines<Material2dPipeline<M>>>()
+                .init_resource::<PendingMeshMaterial2dQueues>()
+                .allow_ambiguous_resource::<PendingMeshMaterial2dQueues>()
+                .add_systems(
+                    RenderStartup,
+                    init_material_2d_pipeline::<M>.after(init_mesh_2d_pipeline),
+                )
+                .add_systems(
+                    ExtractSchedule,
+                    (
+                        extract_entities_needs_specialization::<M>
+                            .in_set(DirtySpecializationSystems::CheckForChanges),
+                        extract_entities_that_need_specializations_removed::<M>
+                            .in_set(DirtySpecializationSystems::CheckForRemovals),
+                        extract_mesh_materials_2d::<M>,
+                    ),
+                )
+                .add_systems(
+                    Render,
+                    (
+                        specialize_material2d_meshes::<M>
+                            .in_set(RenderSystems::Specialize)
+                            .after(prepare_assets::<PreparedMaterial2d<M>>)
+                            .after(prepare_assets::<RenderMesh>)
+                            .after(prepare_pending_mesh_material2d_queues),
+                        queue_material2d_meshes::<M>
+                            .in_set(RenderSystems::QueueMeshes)
+                            .after(prepare_assets::<PreparedMaterial2d<M>>),
+                    ),
+                );
+        }
+    }
+}
+
+```
+
+在RenderStartup阶段生成Material2dPipeline。
+在ExtractSchedule阶段更新需要重新生成的主世界实体，提取主世界的数据。
+在Render阶段生成pipeline，同时生成RenderPhase
+那么RenderPhase如何使用？
