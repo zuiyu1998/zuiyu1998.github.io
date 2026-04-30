@@ -1,6 +1,6 @@
 +++
-title = "从零开始bevy渲染器设计-AsBindGroup"
-date = 2025-11-24
+title = "从零开始bevy渲染器设计- ColorMaterial流转"
+date = 2026-04-22
 
 [taxonomies]
 tags = ["bevy", "renderer"]
@@ -10,6 +10,8 @@ tags = ["bevy", "renderer"]
 
 <!-- more -->
 
-# AsBindGroup
+# ColorMaterial
 
-描述了一个对象如何构建成一个 BindGroup。
+ColorMaterial是bevy的一个2d材质类型。
+
+# 主世界
